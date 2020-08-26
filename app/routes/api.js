@@ -1,8 +1,14 @@
-const Router = require('koa-router')
-const router = new Router({ prefix: '/api' })
+const Router = require('koa-router');
+const router = new Router({ prefix: '/api' });
+const shop = require('@libs/shop');
 
 router.get('/settings', async (ctx) => {
-  ctx.body = 'Api request';
+  
+  ctx.body = '';
 });
 
-module.exports = router
+router.post('/settings', async (ctx) => {
+
+});
+
+module.exports = router;

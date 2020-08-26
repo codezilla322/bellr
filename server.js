@@ -45,7 +45,7 @@ app.prepare().then(() => {
     createShopifyAuth({
       apiKey: SHOPIFY_API_KEY,
       secret: SHOPIFY_API_SECRET_KEY,
-      scopes: ['read_products', 'write_products'],
+      scopes: ['read_orders', 'write_orders'],
       accessMode: 'offline',
       async afterAuth(ctx) {
         const { shop, accessToken } = ctx.session;
@@ -55,24 +55,60 @@ app.prepare().then(() => {
           sameSite: 'none'
         });
 
-        const registration = await registerWebhook({
-          address: `${HOST}/webhooks/products/create`,
-          topic: 'PRODUCTS_CREATE',
-          accessToken,
-          shop,
-          apiVersion: ApiVersion.July20
+        Promise.all([
+          registerWebhook({
+            address: `${HOST}/webhooks/orders/create`,
+            topic: 'ORDERS_CREATE',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhooks/orders/cancelled`,
+            topic: 'ORDERS_CANCELLED',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhooks/orders/paid`,
+            topic: 'ORDERS_PAID',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhooks/orders/fulfilled`,
+            topic: 'ORDERS_FULFILLED',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhooks/orders/partially_fulfilled`,
+            topic: 'ORDERS_PARTIALLY_FULFILLED',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          })
+        ])
+        .then((registration) => {
+          if (registration[0].success &&
+            registration[1].success &&
+            registration[2].success &&
+            registration[3].success &&
+            registration[4].success) {
+            console.log('> Webhook Registered');
+          } else {
+            console.log('> Webhook registration failed');
+          }
+
+          console.log('> Authenticated: ' + shop + ' - ' + accessToken);
+          const shopModel = require('@models/shops');
+          shopModel.addShop(shop, accessToken);
         });
 
-        if (registration.success) {
-          console.log('> Webhook Registered!');
-        } else {
-          console.log('> Webhook registration failed!', registration.result);
-        }
-
-        console.log('> Authenticated: ' + shop + ' - ' + accessToken);
-        const shopModel = require('@models/shops');
-        shopModel.addShop(shop, accessToken);
-        ctx.redirect('https://'+shop+'/admin/apps');
+        ctx.redirect('https://'+shop+'/admin/apps/slackify-4');
       },
     }),
   );
@@ -84,7 +120,8 @@ app.prepare().then(() => {
 
   const router = new Router();
   const apiRouter = require('@routes/api');
-  const webhook = receiveWebhook({secret: SHOPIFY_API_SECRET_KEY});
+  const slackRouter = require('@routes/slack');
+  const webhook = receiveWebhook({ secret: SHOPIFY_API_SECRET_KEY });
   const webhookRouter = require('@routes/webhook')(webhook);
 
   router.all('/(.*)', verifyRequest(), async (ctx) => {
@@ -94,7 +131,9 @@ app.prepare().then(() => {
   });
 
   server.use(apiRouter.routes());
-  server.use(apiRouter.allowedMethods());
+  server.use(apiRouter.allowedMethods());  
+  server.use(slackRouter.routes());
+  server.use(slackRouter.allowedMethods());
   server.use(webhookRouter.routes());
   server.use(webhookRouter.allowedMethods());
   server.use(router.routes());
