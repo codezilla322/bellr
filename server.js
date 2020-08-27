@@ -102,11 +102,11 @@ app.prepare().then(() => {
           } else {
             console.log('> Webhook registration failed');
           }
-
-          console.log('> Authenticated: ' + shop + ' - ' + accessToken);
-          const shopModel = require('@models/shops');
-          shopModel.addShop(shop, accessToken);
         });
+        
+        console.log('> Authenticated: ' + shop + ' - ' + accessToken);
+        const shopModel = require('@models/shops');
+        shopModel.addShop(shop, accessToken);
 
         ctx.redirect('https://'+shop+'/admin/apps/slackify-4');
       },
