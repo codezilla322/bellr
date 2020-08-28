@@ -10,4 +10,7 @@ module.exports = withCSS({
     config.plugins.push(new webpack.DefinePlugin(env));
     return config;
   },
+  env: {
+    API_KEY: process.env.SHOPIFY_API_KEY
+  }
 });

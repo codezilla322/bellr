@@ -1,11 +1,22 @@
 import { Page, Layout, Card, Heading, List, Icon, Button } from '@shopify/polaris';
 import { TickMinor } from '@shopify/polaris-icons';
+import createApp from '@shopify/app-bridge';
+import { Redirect } from '@shopify/app-bridge/actions';
+import Cookies from 'js-cookie';
 
 class Subscription extends React.Component {
   state = {
     trial: true,
     current: ''
   };
+  handleChooseBasic() {
+    const app = createApp({
+      apiKey: process.env.API_KEY,
+      shopOrigin: Cookies.get("shopOrigin")
+    });
+    const redirect = Redirect.create(app);
+    return redirect.dispatch(Redirect.Action.APP, '/plan/basic');
+  }
   render() {
     return (
       <Page title="Subscription">
@@ -37,7 +48,7 @@ class Subscription extends React.Component {
                         <p>Partially fulfilled order notification</p>
                       </List.Item>
                     </List>
-                    <Button primary>Choose this plan</Button>
+                    <Button primary onClick={this.handleChooseBasic}>Choose this plan</Button>
                   </div>
                 </Card.Section>
               </Card>

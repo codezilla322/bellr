@@ -1,4 +1,4 @@
-import { Page, Layout, TextContainer, Heading, Link, Banner } from '@shopify/polaris';
+import { Page, Layout, TextContainer, Heading, Link } from '@shopify/polaris';
 import createApp from '@shopify/app-bridge';
 import { Redirect } from '@shopify/app-bridge/actions';
 import Cookies from 'js-cookie';
@@ -9,23 +9,21 @@ class Index extends React.Component {
     loading: true,
     trial: true,
     paid: false,
-    connected: false
+    connected: true
   };
 
   componentDidMount() {
+
     this.setState({
-      loading: false,
-      trial: true,
-      paid: false,
-      connected: false
+      loading: false
     });
 
-    //   const app = createApp({
-    //     apiKey: '8e4754eea91404dcef1d830345af8f08',
-    //     shopOrigin: Cookies.get("shopOrigin")
-    //   });
-    //   const redirect = Redirect.create(app);
-    //   return redirect.dispatch(Redirect.Action.APP, '/subscription');
+    const app = createApp({
+      apiKey: process.env.API_KEY,
+      shopOrigin: Cookies.get('shopOrigin')
+    });
+    const redirect = Redirect.create(app);
+    return redirect.dispatch(Redirect.Action.APP, '/subscription');
   }
 
   render() {
