@@ -11,6 +11,7 @@ module.exports = withCSS({
     return config;
   },
   env: {
-    API_KEY: process.env.SHOPIFY_API_KEY
+    HOST: process.env.HOST,
+    API_KEY: process.env.SHOPIFY_API_KEY,
   }
 });

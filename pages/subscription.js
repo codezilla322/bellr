@@ -15,7 +15,15 @@ class Subscription extends React.Component {
       shopOrigin: Cookies.get("shopOrigin")
     });
     const redirect = Redirect.create(app);
-    return redirect.dispatch(Redirect.Action.APP, '/plan/basic');
+    return redirect.dispatch(Redirect.Action.REMOTE, `${process.env.HOST}/api/subscription/?plan=basic`);
+  }
+  handleChoosePremium() {
+    const app = createApp({
+      apiKey: process.env.API_KEY,
+      shopOrigin: Cookies.get("shopOrigin")
+    });
+    const redirect = Redirect.create(app);
+    return redirect.dispatch(Redirect.Action.REMOTE, `${process.env.HOST}/api/subscription/?plan=premium`);
   }
   render() {
     return (
@@ -68,7 +76,7 @@ class Subscription extends React.Component {
                         <p>Daily sales report</p>
                       </List.Item>
                     </List>
-                    <Button primary>Choose this plan</Button>
+                    <Button primary onClick={this.handleChoosePremium}>Choose this plan</Button>
                   </div>
                 </Card.Section>
               </Card>

@@ -54,69 +54,61 @@ app.prepare().then(() => {
           secure: true,
           sameSite: 'none'
         });
-
-        console.log('> Authenticated: ' + shop + ' - ' + accessToken);
-
+        console.log(`> Authenticated: ${shop} - ${accessToken}`);
         const shopModel = require('@models/shops');
-        const shopData = await shopModel.findShopByName(shop);
-
-        if (!shopData || shopData['is_webhook_registered'] == 0) {
-          let webhookRegistered = 1;
-          Promise.all([
-            registerWebhook({
-              address: `${HOST}/webhooks/orders/create`,
-              topic: 'ORDERS_CREATE',
-              accessToken,
-              shop,
-              apiVersion: ApiVersion.July20
-            }),
-            registerWebhook({
-              address: `${HOST}/webhooks/orders/cancelled`,
-              topic: 'ORDERS_CANCELLED',
-              accessToken,
-              shop,
-              apiVersion: ApiVersion.July20
-            }),
-            registerWebhook({
-              address: `${HOST}/webhooks/orders/paid`,
-              topic: 'ORDERS_PAID',
-              accessToken,
-              shop,
-              apiVersion: ApiVersion.July20
-            }),
-            registerWebhook({
-              address: `${HOST}/webhooks/orders/fulfilled`,
-              topic: 'ORDERS_FULFILLED',
-              accessToken,
-              shop,
-              apiVersion: ApiVersion.July20
-            }),
-            registerWebhook({
-              address: `${HOST}/webhooks/orders/partially_fulfilled`,
-              topic: 'ORDERS_PARTIALLY_FULFILLED',
-              accessToken,
-              shop,
-              apiVersion: ApiVersion.July20
-            })
-          ])
-          .then((registration) => {
-            if (registration[0].success &&
-              registration[1].success &&
-              registration[2].success &&
-              registration[3].success &&
-              registration[4].success) {
-              console.log('> Webhook Registered');
-            } else {
-              console.log('> Webhook registration failed');
-              webhookRegistered = 0;
-            }
-            shopModel.addShop(shop, accessToken, webhookRegistered);
-          });
-        } else {
-          if (shopData['access_token'] != accessToken)
-            shopModel.addShop(shop, accessToken);
-        }
-
+        Promise.all([
+          registerWebhook({
+            address: `${HOST}/webhook/orders/create`,
+            topic: 'ORDERS_CREATE',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhook/orders/cancelled`,
+            topic: 'ORDERS_CANCELLED',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhook/orders/paid`,
+            topic: 'ORDERS_PAID',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhook/orders/fulfilled`,
+            topic: 'ORDERS_FULFILLED',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhook/orders/partially_fulfilled`,
+            topic: 'ORDERS_PARTIALLY_FULFILLED',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhook/subscriptions/update`,
+            topic: 'APP_SUBSCRIPTIONS_UPDATE',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          shopModel.addShop(shop, accessToken)
+        ])
+        .then((result) => {
+          if (result[0].success && result[1].success && result[2].success && 
+            result[3].success && result[4].success && result[5].success) {
+            console.log(`> Webhook Registered: ${shop}`);
+          } else {
+            console.log(`> Webhook registration failed: ${shop}`);
+          }
+        });
         ctx.redirect('https://'+shop+'/admin/apps/' + process.env.APP_NAME);
       },
     }),
@@ -125,14 +117,11 @@ app.prepare().then(() => {
   server.use(graphQLProxy({version: ApiVersion.July20}))
   server.use(serve('./public'));
   server.use(cors());
-  server.use(bodyParser());
 
   const router = new Router();
-  const apiRouter = require('@routes/api');
-  const slackRouter = require('@routes/slack');
   const webhook = receiveWebhook({ secret: SHOPIFY_API_SECRET_KEY });
   const webhookRouter = require('@routes/webhook')(webhook);
-  const planRouter = require('@routes/plan')(verifyRequest);
+  const apiRouter = require('@routes/api')(verifyRequest);
 
   router.all('/(.*)', verifyRequest(), async (ctx) => {
     await handle(ctx.req, ctx.res);
@@ -140,14 +129,13 @@ app.prepare().then(() => {
     ctx.res.statusCode = 200;
   });
 
-  server.use(apiRouter.routes());
-  server.use(apiRouter.allowedMethods());  
-  server.use(slackRouter.routes());
-  server.use(slackRouter.allowedMethods());
   server.use(webhookRouter.routes());
   server.use(webhookRouter.allowedMethods());
-  server.use(planRouter.routes());
-  server.use(planRouter.allowedMethods());
+
+  server.use(bodyParser());
+
+  server.use(apiRouter.routes());
+  server.use(apiRouter.allowedMethods());  
   server.use(router.routes());
   server.use(router.allowedMethods());
 
