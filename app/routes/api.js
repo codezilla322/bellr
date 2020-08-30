@@ -1,6 +1,8 @@
 const Router = require('koa-router');
 const router = new Router();
 const shopModel = require('@models/shops');
+const basefunc = require('@libs/basefunc');
+const constants = require('@libs/constants');
 const request = require('request');
 
 module.exports = function(verifyRequest) {
@@ -69,6 +71,12 @@ module.exports = function(verifyRequest) {
   router.get('/subscription/callback', verifyRequest(), (ctx) => {
     const shop = ctx.session.shop;
     const subscription_id = ctx.query.charge_id;
+    const shopData = {
+      subscription_id: subscription_id,
+      subscription_status: constants.subscription.status.ACTIVE,
+      subscription_activated_time: basefunc.getCurrentTimestamp()
+    };
+    shopModel.updateShop(shop, shopData);
     console.log(`> Subscription activated: ${shop} - ${subscription_id}`);
   });
 
@@ -106,7 +114,11 @@ module.exports = function(verifyRequest) {
               ctx.response.status = 500;
               ctx.response.body = 'Failed to add Slackify to the Slack channel.';
             } else {
-              shopModel.updateShop(shop, { slack_access: bodyJSON, slack_webhook_url: body.incoming_webhook.url });
+              shopModel.updateShop(shop, {
+                slack_access: bodyJSON,
+                slack_webhook_url: body.incoming_webhook.url,
+                is_slack_connected: constants.slack.CONNECTED
+              });
               ctx.redirect('https://'+shop+'/admin/apps/' + process.env.APP_NAME);
             }
             resolve();

@@ -99,11 +99,25 @@ app.prepare().then(() => {
             shop,
             apiVersion: ApiVersion.July20
           }),
+          registerWebhook({
+            address: `${HOST}/webhook/shop/update`,
+            topic: 'SHOP_UPDATE',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
+            address: `${HOST}/webhook/app/uninstalled`,
+            topic: 'APP_UNINSTALLED',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
           shopModel.addShop(shop, accessToken)
         ])
         .then((result) => {
-          if (result[0].success && result[1].success && result[2].success && 
-            result[3].success && result[4].success && result[5].success) {
+          if (result[0].success && result[1].success && result[2].success && result[3].success &&
+            result[4].success && result[5].success && result[6].success && result[7].success) {
             console.log(`> Webhook Registered: ${shop}`);
           } else {
             console.log(`> Webhook registration failed: ${shop}`);

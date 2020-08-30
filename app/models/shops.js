@@ -12,7 +12,7 @@ module.exports = {
         shopData = {
           shop_origin: shop,
           access_token: accessToken,
-          added_time: basefunc.getCurrentTimestamp(),
+          first_installed_time: basefunc.getCurrentTimestamp(),
           trial_expire_time: Math.floor(new Date().getTime() / 1000) + free_trial_period * 24 * 60 * 60,
         };
         var query = "INSERT INTO shops SET ?";
@@ -47,5 +47,11 @@ module.exports = {
         return resolve(result);
       });
     });
+  },
+  updateSubscriptionPlan: function(shop, subscriptionPlan) {
+    this.updateShop(shop, { subscription_plan: subscriptionPlan });
+  },
+  updateSubscriptionStatus: function(shop, subscriptionStatus) {
+    this.updateShop(shop, { subscription_status: subscriptionStatus });
   }
 };
