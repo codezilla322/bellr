@@ -10,14 +10,25 @@ module.exports = function(webhook) {
   });
 
   router.post('/subscriptions/update', webhook, async (ctx) => {
-    console.log(ctx.request.body);
-
+    ctx.body = 'ok';
+    const appSubscription = ctx.request.body.app_subscription;
+    if (appSubscription.status != 'ACTIVE' &&
+      appSubscription.status != 'CANCELLED' &&
+      appSubscription.status != 'EXPIRED')
+      return;
+    const graphqlApiId = appSubscription.admin_graphql_api_id;
+    const subscriptionId = graphqlApiId.split('/')[4];
+    let plan = appSubscription.name;
+    plan = plan.split(' ')[1];
     let subscriptionPlan = constants.subscription.plan.BASIC;
-    let plan = 'basic';
     if (plan == 'premium')
       subscriptionPlan = constants.subscription.plan.PREMIUM;
-    shopModel.updateSubscriptionPlan(shop, subscriptionPlan);
-    console.log(`> Subscription activated: ${shop} - ${plan}`);
+    const subscriptionStatus = constants.subscription.status[appSubscription.status];
+    shopModel.updateSubscription(subscriptionId, {
+      subscription_plan: subscriptionPlan,
+      subscription_status: subscriptionStatus
+    });
+    console.log(`> Subscription updated: ${subscriptionId} - ${plan} - ${appSubscription.status}`);
   });
 
   router.post('/app/uninstalled', webhook, async (ctx) => {

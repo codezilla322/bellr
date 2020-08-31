@@ -13,7 +13,7 @@ module.exports = {
           shop_origin: shop,
           access_token: accessToken,
           first_installed_time: basefunc.getCurrentTimestamp(),
-          trial_expire_time: Math.floor(new Date().getTime() / 1000) + free_trial_period * 24 * 60 * 60,
+          trial_expiration_time: Math.floor(new Date().getTime() / 1000) + free_trial_period * 24 * 60 * 60,
         };
         var query = "INSERT INTO shops SET ?";
         return new Promise(function(resolve, reject) {
@@ -48,10 +48,17 @@ module.exports = {
       });
     });
   },
-  updateSubscriptionPlan: function(shop, subscriptionPlan) {
-    this.updateShop(shop, { subscription_plan: subscriptionPlan });
-  },
   updateSubscriptionStatus: function(shop, subscriptionStatus) {
     this.updateShop(shop, { subscription_status: subscriptionStatus });
+  },
+  updateSubscription: function(subscriptionId, subscriptionData) {
+    var query = "UPDATE shops SET ? WHERE subscription_id = ?";
+    return new Promise(function(resolve, reject) {
+      db.query(query, [subscriptionData, subscriptionId], function(err, result) {
+        if (err)
+          return reject(err);
+        return resolve(result);
+      });
+    });
   }
 };

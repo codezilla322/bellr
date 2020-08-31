@@ -1,12 +1,13 @@
 .subscription-plan {
+  min-height: 276px;
   padding: 2rem;
 }
 .subscription-plan h3 {
   text-align: center;
 }
 .subscription-plan ul {
-  margin-top: 1.6rem;
   min-height: 140px;
+  margin-top: 1.6rem;
 }
 .subscription-plan ul li {
   display: flex;
@@ -21,4 +22,9 @@
 .subscription-plan button {
   display: block;
   margin: 2rem auto 0;
+}
+.badge-wrapper {
+  display: block;
+  text-align: center;
+  margin: 2.5rem 0 0;
 }

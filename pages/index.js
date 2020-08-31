@@ -3,27 +3,33 @@ import createApp from '@shopify/app-bridge';
 import { Redirect } from '@shopify/app-bridge/actions';
 import Cookies from 'js-cookie';
 import { TrialBanner } from '@components';
+import * as constants from '@libs/constants';
 
 class Index extends React.Component {
   state = {
     loading: true,
     trial: true,
+    trialExpiration: 7,
     paid: false,
-    connected: true
+    connected: false,
+    plan: constants.subscription.plan.TRIAL
   };
 
   componentDidMount() {
-
-    this.setState({
-      loading: false
-    });
-
-    const app = createApp({
-      apiKey: process.env.API_KEY,
-      shopOrigin: Cookies.get('shopOrigin')
-    });
-    const redirect = Redirect.create(app);
-    return redirect.dispatch(Redirect.Action.APP, '/subscription');
+    fetch('/api/settings')
+      .then(response => response.json())
+      .then(data => {
+        if (!data.trial && !data.paid) {
+          const app = createApp({
+            apiKey: process.env.API_KEY,
+            shopOrigin: Cookies.get('shopOrigin')
+          });
+          const redirect = Redirect.create(app);
+          return redirect.dispatch(Redirect.Action.APP, '/subscription');
+        }
+        data['loading'] = false;
+        this.setState(data);
+      });
   }
 
   render() {
@@ -32,8 +38,8 @@ class Index extends React.Component {
     }
     if (this.state.connected) {
       return (
-        <Page>
-          <TrialBanner></TrialBanner>
+        <Page title="Settings">
+          <TrialBanner isTrial={this.state.trial} expiration={this.state.trialExpiration}></TrialBanner>
         </Page>
       );
     } else {

@@ -1,14 +1,23 @@
-import { Page, Layout, Card, Heading, List, Icon, Button } from '@shopify/polaris';
+import { Page, Layout, Card, Heading, List, Icon, Button, Badge } from '@shopify/polaris';
 import { TickMinor } from '@shopify/polaris-icons';
 import createApp from '@shopify/app-bridge';
 import { Redirect } from '@shopify/app-bridge/actions';
 import Cookies from 'js-cookie';
+import * as constants from '@libs/constants';
 
 class Subscription extends React.Component {
   state = {
-    trial: true,
-    current: ''
+    loading: true,
+    paid: false,
+    plan: constants.subscription.plan.TRIAL
   };
+  componentDidMount() {
+    fetch('/api/settings')
+      .then(response => response.json())
+      .then(data => {
+        this.setState({ loading: false, paid: data.paid, plan: data.plan });
+      });
+  }
   handleChooseBasic() {
     const app = createApp({
       apiKey: process.env.API_KEY,
@@ -26,6 +35,14 @@ class Subscription extends React.Component {
     return redirect.dispatch(Redirect.Action.REMOTE, `${process.env.HOST}/api/subscription/?plan=premium`);
   }
   render() {
+    if (this.state.loading)
+      return null;
+    let buttonBasic = <Button primary onClick={this.handleChooseBasic}>Choose this plan</Button>;
+    if (this.state.paid && this.state.plan == constants.subscription.plan.BASIC)
+      buttonBasic = <div className="badge-wrapper"><Badge status="info" size="medium">Your Current Plan</Badge></div>;
+    let buttonPremium = <Button primary onClick={this.handleChoosePremium}>Choose this plan</Button>;
+    if (this.state.paid && this.state.plan == constants.subscription.plan.PREMIUM)
+      buttonPremium = <div className="badge-wrapper"><Badge status="info" size="medium">Your Current Plan</Badge></div>;
     return (
       <Page title="Subscription">
         <Layout>
@@ -56,7 +73,7 @@ class Subscription extends React.Component {
                         <p>Partially fulfilled order notification</p>
                       </List.Item>
                     </List>
-                    <Button primary onClick={this.handleChooseBasic}>Choose this plan</Button>
+                    {buttonBasic}
                   </div>
                 </Card.Section>
               </Card>
@@ -76,7 +93,7 @@ class Subscription extends React.Component {
                         <p>Daily sales report</p>
                       </List.Item>
                     </List>
-                    <Button primary onClick={this.handleChoosePremium}>Choose this plan</Button>
+                    {buttonPremium}
                   </div>
                 </Card.Section>
               </Card>

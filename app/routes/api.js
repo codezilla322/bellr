@@ -7,6 +7,35 @@ const request = require('request');
 
 module.exports = function(verifyRequest) {
   router.get('/api/settings', verifyRequest(), async (ctx) => {
+    const shop = ctx.session.shop;
+    return new Promise(function(resolve, reject) {
+      shopModel.findShopByName(shop)
+        .then(shopData => {
+          let trial = true, trialExpiration = 0, paid = false;
+          if (shopData.subscription_plan != constants.subscription.plan.TRIAL) {
+            trial = false;
+            if (shopData.subscription_status == constants.subscription.status.ACTIVE) {
+              paid = true;
+            } else {
+              paid = false;
+            }
+          } else {
+            if (basefunc.isExpired(shopData.trial_expiration_time)) {
+              trial = false;
+            } else {
+              trialExpiration = basefunc.getRemainingTime(shopData.trial_expiration_time);
+            }
+          }
+          ctx.body = {
+            trial: trial,
+            trialExpiration: trialExpiration,
+            paid: paid,
+            connected: shopData.is_slack_connected ? true : false,
+            plan: shopData.subscription_plan
+          };
+          resolve();
+        });
+    });
   });
 
   router.post('/api/settings', verifyRequest(), async (ctx) => {
@@ -15,12 +44,12 @@ module.exports = function(verifyRequest) {
   router.get('/api/subscription', verifyRequest(), async(ctx) => {
     const shop = ctx.session.shop;
     const shopData = await shopModel.findShopByName(shop);
-    const plan = ctx.query.plan;
-    console.log(`> Chosen a plan: ${shop} - ${plan}`);
-    if (shopData['plan'] == plan || (plan != 'basic' && plan != 'premium')) {
-      ctx.redirect('https://'+shop+'/admin/apps/' + process.env.APP_NAME);
+    const plan = ctx.query.plan.toUpperCase();
+    if (!constants.subscription.plan[plan] || shopData['subscription_plan'] == constants.subscription.plan[plan]) {
+      ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
       return;
     }
+    console.log(`> Chosen a plan: ${shop} - ${plan}`);
     var fee = process.env.APP_BASIC_PLAN_FEE;
     if (plan == 'premium')
       fee = process.env.APP_PREMIUM_PLAN_FEE;
@@ -70,14 +99,15 @@ module.exports = function(verifyRequest) {
 
   router.get('/subscription/callback', verifyRequest(), (ctx) => {
     const shop = ctx.session.shop;
-    const subscription_id = ctx.query.charge_id;
+    const subscriptionId = ctx.query.charge_id;
     const shopData = {
-      subscription_id: subscription_id,
+      subscription_id: subscriptionId,
       subscription_status: constants.subscription.status.ACTIVE,
       subscription_activated_time: basefunc.getCurrentTimestamp()
     };
     shopModel.updateShop(shop, shopData);
-    console.log(`> Subscription activated: ${shop} - ${subscription_id}`);
+    console.log(`> Subscription activated: ${shop} - ${subscriptionId}`);
+    ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
   });
 
   router.get('/slack/oauth', verifyRequest(), async (ctx) => {
@@ -119,7 +149,7 @@ module.exports = function(verifyRequest) {
                 slack_webhook_url: body.incoming_webhook.url,
                 is_slack_connected: constants.slack.CONNECTED
               });
-              ctx.redirect('https://'+shop+'/admin/apps/' + process.env.APP_NAME);
+              ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
             }
             resolve();
           }
