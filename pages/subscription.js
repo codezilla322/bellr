@@ -3,13 +3,13 @@ import { TickMinor } from '@shopify/polaris-icons';
 import createApp from '@shopify/app-bridge';
 import { Redirect } from '@shopify/app-bridge/actions';
 import Cookies from 'js-cookie';
-import * as constants from '@libs/constants';
+import * as CONSTANTS from '@libs/constants';
 
 class Subscription extends React.Component {
   state = {
     loading: true,
     paid: false,
-    plan: constants.subscription.plan.TRIAL
+    plan: CONSTANTS.SUBSCRIPTION.PLAN.TRIAL
   };
   componentDidMount() {
     fetch('/api/settings')
@@ -38,10 +38,10 @@ class Subscription extends React.Component {
     if (this.state.loading)
       return null;
     let buttonBasic = <Button primary onClick={this.handleChooseBasic}>Choose this plan</Button>;
-    if (this.state.paid && this.state.plan == constants.subscription.plan.BASIC)
+    if (this.state.paid && this.state.plan == CONSTANTS.SUBSCRIPTION.PLAN.BASIC)
       buttonBasic = <div className="badge-wrapper"><Badge status="info" size="medium">Your Current Plan</Badge></div>;
     let buttonPremium = <Button primary onClick={this.handleChoosePremium}>Choose this plan</Button>;
-    if (this.state.paid && this.state.plan == constants.subscription.plan.PREMIUM)
+    if (this.state.paid && this.state.plan == CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM)
       buttonPremium = <div className="badge-wrapper"><Badge status="info" size="medium">Your Current Plan</Badge></div>;
     return (
       <Page title="Subscription">
@@ -53,24 +53,24 @@ class Subscription extends React.Component {
                     <Heading element="h3">Basic Plan</Heading>
                     <List>
                       <List.Item>
-                        <Icon source={TickMinor}></Icon>
-                        <p>New order notification</p>
+                        <Icon source={TickMinor} />
+                        <p>{CONSTANTS.NOTIFICATION.NEW_ORDER.TITLE}</p>
                       </List.Item>
                       <List.Item>
-                        <Icon source={TickMinor}></Icon>
-                        <p>Cancelled order notification</p>
+                        <Icon source={TickMinor} />
+                        <p>{CONSTANTS.NOTIFICATION.CANCELLED_ORDER.TITLE}</p>
                       </List.Item>
                       <List.Item>
-                        <Icon source={TickMinor}></Icon>
-                        <p>Paid order notification</p>
+                        <Icon source={TickMinor} />
+                        <p>{CONSTANTS.NOTIFICATION.PAID_ORDER.TITLE}</p>
                       </List.Item>
                       <List.Item>
-                        <Icon source={TickMinor}></Icon>
-                        <p>Fulfilled order notification</p>
+                        <Icon source={TickMinor} />
+                        <p>{CONSTANTS.NOTIFICATION.FULFILLED_ORDER.TITLE}</p>
                       </List.Item>
                       <List.Item>
-                        <Icon source={TickMinor}></Icon>
-                        <p>Partially fulfilled order notification</p>
+                        <Icon source={TickMinor} />
+                        <p>{CONSTANTS.NOTIFICATION.PARTIALLY_FULFILLED_ORDER.TITLE}</p>
                       </List.Item>
                     </List>
                     {buttonBasic}
@@ -85,12 +85,12 @@ class Subscription extends React.Component {
                     <Heading element="h3">Premium Plan</Heading>
                     <List>
                       <List.Item>
-                        <Icon source={TickMinor}></Icon>
+                        <Icon source={TickMinor} />
                         <p>All basic plan features</p>
                       </List.Item>
                       <List.Item>
-                        <Icon source={TickMinor}></Icon>
-                        <p>Daily sales report</p>
+                        <Icon source={TickMinor} />
+                        <p>{CONSTANTS.NOTIFICATION.SALES_REPORT.TITLE}</p>
                       </List.Item>
                     </List>
                     {buttonPremium}

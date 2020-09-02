@@ -1,18 +1,22 @@
-import { Page, Layout, TextContainer, Heading, Link } from '@shopify/polaris';
+import { Frame, Page, Layout, Card, DataTable, TextContainer, Heading, Link, Toast, Icon } from '@shopify/polaris';
 import createApp from '@shopify/app-bridge';
 import { Redirect } from '@shopify/app-bridge/actions';
 import Cookies from 'js-cookie';
-import { TrialBanner } from '@components';
-import * as constants from '@libs/constants';
+import { EditMajorMonotone, LockMajorMonotone } from '@shopify/polaris-icons';
+import { TrialBanner, Switch } from '@components';
+import * as CONSTANTS from '@libs/constants';
 
 class Index extends React.Component {
   state = {
     loading: true,
+    saving: false,
     trial: true,
     trialExpiration: 7,
     paid: false,
     connected: false,
-    plan: constants.subscription.plan.TRIAL
+    plan: CONSTANTS.SUBSCRIPTION.PLAN.TRIAL,
+    settings: {},
+    toast: CONSTANTS.TOAST.HIDDEN
   };
 
   componentDidMount() {
@@ -32,15 +36,101 @@ class Index extends React.Component {
       });
   }
 
+  handleChange = (key, checked) => {
+    let settings = this.state.settings;
+    settings[key] = checked;
+    this.setState({ settings: settings });
+  }
+
+  handleSave = () => {
+    this.setState({ saving: true });
+    const notifications = this.state.settings;
+    fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: notifications }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.result == 'success') {
+          this.setState({ toast: CONSTANTS.TOAST.SUCCESS, saving: false });
+        } else {
+          this.setState({ toast: CONSTANTS.TOAST.FAILED, saving: false });
+        }
+        setTimeout(() => {
+          this.hideToast();
+        }, 3000);
+      });
+  }
+
+  sendTestNotification = () => {
+
+  }
+
+  hideToast = () => {
+    this.setState({ toast: CONSTANTS.TOAST.HIDDEN });
+  }
+
   render() {
     if (this.state.loading) {
       return null;
     }
     if (this.state.connected) {
+      var notifications = [];
+      for (var key in this.state.settings) {
+        var notification = [];
+        if (key == 'sales_report' && (!this.state.paid || this.state.plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM)) {
+          notification.push(<Icon source={LockMajorMonotone} />);
+        } else {
+          notification.push(
+            <Switch
+              handleChange={this.handleChange}
+              stateKey={key}
+              isEnabled={this.state.settings[key]}
+            />
+          );
+        }
+        const keyUppercase = key.toUpperCase();
+        notification.push(CONSTANTS.NOTIFICATION[keyUppercase].TITLE);
+        notification.push(<div className="description-container">{CONSTANTS.NOTIFICATION[keyUppercase].DESCRIPTION}</div>);
+        notifications.push(notification);
+      }
+      var toastMarkup = '';
+      if (this.state.toast == CONSTANTS.TOAST.SUCCESS) {
+        toastMarkup = (<Toast content="Settings updated successfully" onDismiss={this.hideToast} />);
+      } else if (this.state.toast == CONSTANTS.TOAST.FAILED) {
+        toastMarkup = (<Toast content="Failed to update settings" onDismiss={this.hideToast} />);
+      }
+      console.log(toastMarkup);
       return (
-        <Page title="Settings">
-          <TrialBanner isTrial={this.state.trial} expiration={this.state.trialExpiration}></TrialBanner>
-        </Page>
+        <Frame>
+          <Page title="Settings">
+            <Layout>
+              <TrialBanner isTrial={this.state.trial} expiration={this.state.trialExpiration}></TrialBanner>
+              <Layout.Section>
+                <Card
+                  primaryFooterAction={{
+                    content: 'Save',
+                    onAction: this.handleSave,
+                    loading: this.state.saving
+                  }}
+                  secondaryFooterActions={[{
+                    content: 'Send test notification',
+                    onAction: this.sendTestNotification
+                  }]}
+                  sectioned
+                >
+                  <DataTable
+                    columnContentTypes={[]}
+                    headings={['Status', 'Notification type', 'Description']}
+                    rows={notifications}
+                  />
+                </Card>
+              </Layout.Section>
+            </Layout>
+            {toastMarkup}
+          </Page>
+        </Frame>
       );
     } else {
       return (

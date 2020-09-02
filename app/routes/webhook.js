@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 const router = new Router({ prefix: '/webhook' });
 const shopModel = require('@models/shops');
-const constants = require('@libs/constants');
+const CONSTANTS = require('@libs/constants');
 
 module.exports = function(webhook) {
 
@@ -20,10 +20,10 @@ module.exports = function(webhook) {
     const subscriptionId = graphqlApiId.split('/')[4];
     let plan = appSubscription.name;
     plan = plan.split(' ')[1];
-    let subscriptionPlan = constants.subscription.plan.BASIC;
+    let subscriptionPlan = CONSTANTS.SUBSCRIPTION.PLAN.BASIC;
     if (plan == 'premium')
-      subscriptionPlan = constants.subscription.plan.PREMIUM;
-    const subscriptionStatus = constants.subscription.status[appSubscription.status];
+      subscriptionPlan = CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM;
+    const subscriptionStatus = CONSTANTS.SUBSCRIPTION.STATUS[appSubscription.status];
     shopModel.updateSubscription(subscriptionId, {
       subscription_plan: subscriptionPlan,
       subscription_status: subscriptionStatus
@@ -33,7 +33,7 @@ module.exports = function(webhook) {
 
   router.post('/app/uninstalled', webhook, async (ctx) => {
     const shop = ctx.request.body.myshopify_domain;
-    shopModel.updateSubscriptionStatus(shop, constants.subscription.status.CANCELLED);
+    shopModel.updateSubscriptionStatus(shop, CONSTANTS.SUBSCRIPTION.STATUS.CANCELLED);
     console.log(`> App uninstalled: ${shop}`);
   });
 
@@ -42,7 +42,7 @@ module.exports = function(webhook) {
     if (plan != 'cancelled')
       return;
     const shop = ctx.request.body.myshopify_domain;
-    shopModel.updateSubscriptionStatus(shop, constants.subscription.status.CANCELLED);
+    shopModel.updateSubscriptionStatus(shop, CONSTANTS.SUBSCRIPTION.STATUS.CANCELLED);
     console.log(`> Shop plan cancelled: ${shop}`);
   });
 

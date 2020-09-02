@@ -1,3 +1,27 @@
+.Polaris-DataTable__Cell {
+  vertical-align: middle;
+}
+.Polaris-DataTable__Cell button {
+  padding: 0.8rem;
+  min-width: 3.2rem;
+  min-height: 3.2rem;
+}
+button .Polaris-Icon {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+.Polaris-DataTable__Cell > .Polaris-Icon {
+  margin: 0.6rem 1rem;
+}
+.Polaris-DataTable__Cell > .Polaris-Icon svg {
+  fill: #637381;
+}
+.switch-container {
+  margin-top: 0.6rem;
+}
+.description-container {
+  white-space: normal;
+}
 .subscription-plan {
   min-height: 276px;
   padding: 2rem;

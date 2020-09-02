@@ -1,9 +1,9 @@
 const Router = require('koa-router');
 const router = new Router();
+const request = require('request');
 const shopModel = require('@models/shops');
 const basefunc = require('@libs/basefunc');
-const constants = require('@libs/constants');
-const request = require('request');
+const CONSTANTS = require('@libs/constants');
 
 module.exports = function(verifyRequest) {
   router.get('/api/settings', verifyRequest(), async (ctx) => {
@@ -12,9 +12,9 @@ module.exports = function(verifyRequest) {
       shopModel.findShopByName(shop)
         .then(shopData => {
           let trial = true, trialExpiration = 0, paid = false;
-          if (shopData.subscription_plan != constants.subscription.plan.TRIAL) {
+          if (shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.TRIAL) {
             trial = false;
-            if (shopData.subscription_status == constants.subscription.status.ACTIVE) {
+            if (shopData.subscription_status == CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE) {
               paid = true;
             } else {
               paid = false;
@@ -31,7 +31,8 @@ module.exports = function(verifyRequest) {
             trialExpiration: trialExpiration,
             paid: paid,
             connected: shopData.is_slack_connected ? true : false,
-            plan: shopData.subscription_plan
+            plan: shopData.subscription_plan,
+            settings: JSON.parse(shopData.notifications)
           };
           resolve();
         });
@@ -39,13 +40,35 @@ module.exports = function(verifyRequest) {
   });
 
   router.post('/api/settings', verifyRequest(), async (ctx) => {
+    var notifications = ctx.request.body.settings;
+    if (!notifications || Object.keys(notifications).length != CONSTANTS.NOTIFICATION.KEYS.length) {
+      console.log(Object.keys(notifications).length);
+      console.log(CONSTANTS.NOTIFICATION.KEYS.length);
+      ctx.body = { result: 'failed' };
+      return;
+    }
+
+    for (var i=0;i<CONSTANTS.NOTIFICATION.KEYS.length;i++) {
+      var key = CONSTANTS.NOTIFICATION.KEYS[i];
+      if (!notifications.hasOwnProperty(key)) {
+        ctx.body = { result: 'failed' };
+        return;
+      }
+    }
+
+    shopModel.updateShop('notifications', notifications);
+    ctx.body = { result: 'success' };
+  });
+
+  router.get('/test', verifyRequest(), async (ctx) => {
+
   });
 
   router.get('/api/subscription', verifyRequest(), async(ctx) => {
     const shop = ctx.session.shop;
     const shopData = await shopModel.findShopByName(shop);
     const plan = ctx.query.plan.toUpperCase();
-    if (!constants.subscription.plan[plan] || shopData['subscription_plan'] == constants.subscription.plan[plan]) {
+    if (!CONSTANTS.SUBSCRIPTION.PLAN[plan] || shopData['subscription_plan'] == CONSTANTS.SUBSCRIPTION.PLAN[plan]) {
       ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
       return;
     }
@@ -102,12 +125,12 @@ module.exports = function(verifyRequest) {
     const subscriptionId = ctx.query.charge_id;
     const shopData = {
       subscription_id: subscriptionId,
-      subscription_status: constants.subscription.status.ACTIVE,
+      subscription_status: CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE,
       subscription_activated_time: basefunc.getCurrentTimestamp()
     };
     shopModel.updateShop(shop, shopData);
     console.log(`> Subscription activated: ${shop} - ${subscriptionId}`);
-    ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
+    ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}/subscription`);
   });
 
   router.get('/slack/oauth', verifyRequest(), async (ctx) => {
@@ -147,7 +170,7 @@ module.exports = function(verifyRequest) {
               shopModel.updateShop(shop, {
                 slack_access: bodyJSON,
                 slack_webhook_url: body.incoming_webhook.url,
-                is_slack_connected: constants.slack.CONNECTED
+                is_slack_connected: CONSTANTS.SLACK.CONNECTED
               });
               ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
             }
