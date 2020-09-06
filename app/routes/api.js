@@ -6,7 +6,7 @@ const basefunc = require('@libs/basefunc');
 const CONSTANTS = require('@libs/constants');
 
 module.exports = function(verifyRequest) {
-  router.get('/api/settings', verifyRequest(), async (ctx) => {
+  router.get('/api/settings', verifyRequest(), (ctx) => {
     const shop = ctx.session.shop;
     return new Promise(function(resolve, reject) {
       shopModel.findShopByName(shop)
@@ -39,7 +39,7 @@ module.exports = function(verifyRequest) {
     });
   });
 
-  router.post('/api/settings', verifyRequest(), async (ctx) => {
+  router.post('/api/settings', verifyRequest(), (ctx) => {
     var notifications = ctx.request.body.settings;
     if (!notifications || Object.keys(notifications).length != CONSTANTS.NOTIFICATION.KEYS.length) {
       console.log(Object.keys(notifications).length);
@@ -53,18 +53,34 @@ module.exports = function(verifyRequest) {
       if (!notifications.hasOwnProperty(key)) {
         ctx.body = { result: 'failed' };
         return;
+      } else {
+        if (!notifications[key])
+          notifications[key] = false;
+        else
+          notifications[key] = true;
       }
     }
 
-    shopModel.updateShop('notifications', notifications);
+    const shop = ctx.session.shop;
+    return new Promise(function(resolve, reject) {
+      shopModel.findShopByName(shop)
+        .then(shopData => {
+          if (shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM ||
+            shopData.subscription_status != CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE)
+            notifications.sales_report = false;
+
+          shopModel.updateShop(shop, {'notifications': JSON.stringify(notifications)});
+          ctx.body = { result: 'success' };
+          resolve();
+        });
+    });
+  });
+
+  router.get('/test', verifyRequest(), (ctx) => {
     ctx.body = { result: 'success' };
   });
 
-  router.get('/test', verifyRequest(), async (ctx) => {
-
-  });
-
-  router.get('/api/subscription', verifyRequest(), async(ctx) => {
+  router.get('/api/subscription', verifyRequest(), async (ctx) => {
     const shop = ctx.session.shop;
     const shopData = await shopModel.findShopByName(shop);
     const plan = ctx.query.plan.toUpperCase();
@@ -106,18 +122,22 @@ module.exports = function(verifyRequest) {
       }`
     });
 
-    const response = await fetch(`https://${shop}/admin/api/2020-07/graphql.json`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': shopData['access_token']
-      },
-      body: query
+    return new Promise(function(resolve, reject) {
+      fetch(`https://${shop}/admin/api/2020-07/graphql.json`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Shopify-Access-Token': shopData['access_token']
+          },
+          body: query
+        })
+        .then(response => response.json())
+        .then(responseJson => {
+          const confirmationUrl = responseJson.data.appSubscriptionCreate.confirmationUrl;
+          ctx.redirect(confirmationUrl);
+          resolve();
+        });
     });
-
-    const responseJson = await response.json();
-    const confirmationUrl = responseJson.data.appSubscriptionCreate.confirmationUrl;
-    ctx.redirect(confirmationUrl);
   });
 
   router.get('/subscription/callback', verifyRequest(), (ctx) => {
@@ -133,7 +153,7 @@ module.exports = function(verifyRequest) {
     ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}/subscription`);
   });
 
-  router.get('/slack/oauth', verifyRequest(), async (ctx) => {
+  router.get('/slack/oauth', verifyRequest(), (ctx) => {
     const shop = ctx.session.shop;
     // if (!shop) {
     //   ctx.response.status = 500;

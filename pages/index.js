@@ -10,13 +10,15 @@ class Index extends React.Component {
   state = {
     loading: true,
     saving: false,
+    testing: false,
     trial: true,
     trialExpiration: 7,
     paid: false,
     connected: false,
     plan: CONSTANTS.SUBSCRIPTION.PLAN.TRIAL,
     settings: {},
-    toast: CONSTANTS.TOAST.HIDDEN
+    toast: CONSTANTS.TOAST.HIDDEN,
+    toastMsg: ''
   };
 
   componentDidMount() {
@@ -53,9 +55,17 @@ class Index extends React.Component {
       .then(response => response.json())
       .then(data => {
         if (data.result == 'success') {
-          this.setState({ toast: CONSTANTS.TOAST.SUCCESS, saving: false });
+          this.setState({
+            toast: CONSTANTS.TOAST.SHOW,
+            toastMsg: 'Settings updated successfully',
+            saving: false
+          });
         } else {
-          this.setState({ toast: CONSTANTS.TOAST.FAILED, saving: false });
+          this.setState({
+            toast: CONSTANTS.TOAST.SHOW,
+            toastMsg: 'Failed to update settings',
+            saving: false
+          });
         }
         setTimeout(() => {
           this.hideToast();
@@ -64,7 +74,28 @@ class Index extends React.Component {
   }
 
   sendTestNotification = () => {
-
+    this.setState({ testing: true });
+    fetch('/test')
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        if (data.result == 'success') {
+          this.setState({
+            toast: CONSTANTS.TOAST.SHOW,
+            toastMsg: 'Notification was successfully sent',
+            testing: false
+          });
+        } else {
+          this.setState({
+            toast: CONSTANTS.TOAST.SHOW,
+            toastMsg: 'Failed to send notification',
+            testing: false
+          });
+        }
+        setTimeout(() => {
+          this.hideToast();
+        }, 3000);
+      });
   }
 
   hideToast = () => {
@@ -96,12 +127,9 @@ class Index extends React.Component {
         notifications.push(notification);
       }
       var toastMarkup = '';
-      if (this.state.toast == CONSTANTS.TOAST.SUCCESS) {
-        toastMarkup = (<Toast content="Settings updated successfully" onDismiss={this.hideToast} />);
-      } else if (this.state.toast == CONSTANTS.TOAST.FAILED) {
-        toastMarkup = (<Toast content="Failed to update settings" onDismiss={this.hideToast} />);
+      if (this.state.toast == CONSTANTS.TOAST.SHOW) {
+        toastMarkup = (<Toast content={this.state.toastMsg} onDismiss={this.hideToast} />);
       }
-      console.log(toastMarkup);
       return (
         <Frame>
           <Page title="Settings">
@@ -116,7 +144,8 @@ class Index extends React.Component {
                   }}
                   secondaryFooterActions={[{
                     content: 'Send test notification',
-                    onAction: this.sendTestNotification
+                    onAction: this.sendTestNotification,
+                    loading: this.state.testing
                   }]}
                   sectioned
                 >

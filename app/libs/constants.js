@@ -32,5 +32,5 @@ module.exports = {
       DESCRIPTION: 'A daily summary of total revenue.'
     },
   },
-  TOAST: { HIDDEN: 0, SUCCESS: 1, FAILED: 2 }
+  TOAST: { HIDDEN: 0, SHOW: 1 }
 }
