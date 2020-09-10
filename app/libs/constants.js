@@ -9,7 +9,7 @@ module.exports = {
     KEYS: ['new_order', 'cancelled_order', 'paid_order', 'fulfilled_order', 'partially_fulfilled_order', 'sales_report'],
     NEW_ORDER: {
       TITLE: 'New order notification',
-      DESCRIPTION: 'Automatically triggered when a new order is created. Includes order ID, customer\'s name and email, delivery location, cart total, discount code used (if any), tags (if any), UTM tracking (if any), and a link to access the order in Shopify.'
+      DESCRIPTION: 'Automatically triggered when a new order is created. Includes order ID, customer\'s name and email, delivery location, cart total, discount code used (if any), tags (if any), and a link to access the order in Shopify.'
     },
     CANCELLED_ORDER: {
       TITLE: 'Cancelled order notification',
@@ -30,7 +30,10 @@ module.exports = {
     SALES_REPORT: {
       TITLE: 'Daily sales report',
       DESCRIPTION: 'A daily summary of total revenue.'
-    },
+    }
   },
-  TOAST: { HIDDEN: 0, SHOW: 1 }
+  TOAST: { HIDDEN: 0, SHOW: 1 },
+  ORDER: {
+    UNFULFILLED: 'New Order'
+  }
 }

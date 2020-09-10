@@ -7,6 +7,7 @@ module.exports = function(webhook) {
 
   router.post('/orders/create', webhook, async (ctx) => {
     console.log('> New order created: ');
+    console.log(ctx.request.body);
   });
 
   router.post('/subscriptions/update', webhook, async (ctx) => {

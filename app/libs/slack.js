@@ -1,12 +1,22 @@
 const { IncomingWebhook } = require('@slack/webhook');
 
 module.exports = {
-  sendOrderNotification: function(webhook_url, order) {
+  sendNotification: function(webhook_url, text, orderUrl) {
     const webhook = new IncomingWebhook(webhook_url);
-
     (async () => {
       await webhook.send({
-        text: 'I\'ve got news for you...',
+        attachments: [{
+            text: text,
+            color: '#CBEFFF',
+            actions: [
+              {
+                type: 'button',
+                text: 'View Order',
+                url: orderUrl
+              }
+            ]
+          }
+        ]
       });
     })();
   }
