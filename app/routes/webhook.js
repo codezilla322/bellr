@@ -1,13 +1,63 @@
 const Router = require('koa-router');
 const router = new Router({ prefix: '/webhook' });
 const shopModel = require('@models/shops');
+const { isSendable } = require('@libs/basefunc');
 const CONSTANTS = require('@libs/constants');
+const { sendFromOrder } = require('@libs/slack');
 
 module.exports = function(webhook) {
 
   router.post('/orders/create', webhook, async (ctx) => {
-    console.log('> New order created: ');
-    console.log(ctx.request.body);
+    const shop = ctx.headers['x-shopify-shop-domain'];
+    const order = ctx.request.body;
+    console.log(`> New order created: ${shop} - ${order.id}`);
+    const shopData = await shopModel.findShopByName(shop);
+
+    if (isSendable(shopData, 'new_order'))
+      sendFromOrder(order, 'NEW_ORDER', shop, shopData);
+  });
+
+  router.post('/orders/cancelled', webhook, async (ctx) => {
+    console.log(ctx.request.body.refunds);
+    const shop = ctx.headers['x-shopify-shop-domain'];
+    const order = ctx.request.body;
+    console.log(`> Order cancelled: ${shop} - ${order.id}`);
+    const shopData = await shopModel.findShopByName(shop);
+    
+    if (isSendable(shopData, 'cancelled_order'))
+      sendFromOrder(order, 'CANCELLED_ORDER', shop, shopData);
+  });
+
+  router.post('/orders/paid', webhook, async (ctx) => {
+    const shop = ctx.headers['x-shopify-shop-domain'];
+    const order = ctx.request.body;
+    console.log(`> Order paid: ${shop} - ${order.id}`);
+    const shopData = await shopModel.findShopByName(shop);
+
+    if (isSendable(shopData, 'paid_order'))
+      sendFromOrder(order, 'PAID_ORDER', shop, shopData);
+  });
+
+  router.post('/orders/fulfilled', webhook, async (ctx) => {
+    console.log(ctx.request.body.fulfillments);
+    const shop = ctx.headers['x-shopify-shop-domain'];
+    const order = ctx.request.body;
+    console.log(`> Order fulfilled: ${shop} - ${order.id}`);
+    const shopData = await shopModel.findShopByName(shop);
+
+    if (isSendable(shopData, 'fulfilled_order'))
+      sendFromOrder(order, 'FULFILLED_ORDER', shop, shopData);
+  });
+
+  router.post('/orders/partially_fulfilled', webhook, async (ctx) => {
+    console.log(ctx.request.body.fulfillments);
+    const shop = ctx.headers['x-shopify-shop-domain'];
+    const order = ctx.request.body;
+    console.log(`> Order partially fulfilled: ${shop} - ${order.id}`);
+    const shopData = await shopModel.findShopByName(shop);
+
+    if (isSendable(shopData, 'partially_fulfilled_order'))
+      sendFromOrder(order, 'PARTIALLY_FULFILLED_ORDER', shop, shopData);
   });
 
   router.post('/subscriptions/update', webhook, async (ctx) => {

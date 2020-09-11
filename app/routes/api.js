@@ -88,13 +88,15 @@ module.exports = function(verifyRequest) {
             moneyFormat
           }
         }
-        orders(first: 1)	{
+        orders(first: 1, reverse: true)	{
           edges {
             node {
               legacyResourceId
+              displayFinancialStatus
               displayFulfillmentStatus
               name
               customer {
+                legacyResourceId
                 displayName
                 email
               }
@@ -104,6 +106,7 @@ module.exports = function(verifyRequest) {
                 city
                 province
                 country
+                phone
               }
               totalPriceSet {
                 shopMoney {
@@ -122,6 +125,34 @@ module.exports = function(verifyRequest) {
                   node {
                     name
                     quantity
+                  }
+                }
+              }
+              refunds {
+                refundLineItems(first: 50) {
+                  edges {
+                    node {
+                      lineItem {
+                        name
+                      }
+                      quantity
+                    }
+                  }
+                }
+              }
+              fulfillments {
+                status
+                trackingInfo {
+                  company
+                }
+                fulfillmentLineItems(first: 50) {
+                  edges {
+                    node {
+                      lineItem {
+                        name
+                      }
+                      quantity
+                    }
                   }
                 }
               }
@@ -148,52 +179,144 @@ module.exports = function(verifyRequest) {
           } else {
             const moneyFormat = responseJson.data.shop.currencyFormats.moneyFormat;
             const order = orders[0].node;
-             
-            let text = `*${CONSTANTS.ORDER[order.displayFulfillmentStatus]}:*\n`;
-            const orderUrl = `https://${shop}/admin/orders/${order.legacyResourceId}`;
-            text = text + `<${orderUrl}|${order.name}>\n`;
-            text = text + `*Customer:*\n`;
             const customer = order.customer;
-            text = text + `${customer.displayName} <${customer.email}>\n`;
-            text = text + `*Delivery Location:*\n`;
+            let fields = [];
+            let field = new Object();
+            let financialStatus = order.displayFinancialStatus;
+            let fulfillmentStatus = order.displayFulfillmentStatus;
+            let orderType = '';
+            if (fulfillmentStatus == 'FULFILLED') {
+              orderType = 'FULFILLED_ORDER';
+            } else if (fulfillmentStatus == 'PARTIALLY_FULFILLED') {
+              orderType = 'PARTIALLY_FULFILLED_ORDER';
+            } else {
+              if (financialStatus == 'PAID') {
+                orderType = 'PAID_ORDER';
+              } else if (financialStatus == 'PARTIALLY_REFUNDED') {
+
+              } else if (financialStatus == 'PENDING') {
+                orderType = 'NEW_ORDER';
+              }
+            }
+            if (financialStatus == 'VOIDED')
+              orderType = 'CANCELLED_ORDER';
+
+            field['title'] = `${CONSTANTS.ORDER.TITLE[orderType]}:`;
+            const orderUrl = `https://${shop}/admin/orders/${order.legacyResourceId}`;
+            field['value'] = `<${orderUrl}|${order.name}>`;
+            fields.push(field);
+            field = new Object();
+
+            field['title'] = `Customer:`;
+            if (customer) {
+              field['value'] = `${customer.displayName} <${customer.email}>`;
+            } else {
+              field['value'] = `No customer info provided for this order`;
+            }
+            fields.push(field);
+            field = new Object();
+
+            field['title'] = `Delivery Location:`;
             const shippingAddress = order.shippingAddress;
-            let shppingAddr = '';
-            if (shippingAddress.address1)
-              shppingAddr = shppingAddr + shippingAddress.address1 + `, `;
-            if (shippingAddress.address2)
-              shppingAddr = shppingAddr + shippingAddress.address2 + `, `;
-            if (shippingAddress.city)
-              shppingAddr = shppingAddr + shippingAddress.city + `, `;
-            if (shippingAddress.province)
-              shppingAddr = shppingAddr + shippingAddress.province + `, `;
-            if (shippingAddress.country)
-              shppingAddr = shppingAddr + shippingAddress.country;
-            text = text + shppingAddr + `\n`;
-            text = text + `*Cart Total:*\n`;
-            const total = moneyFormat.replace('{{amount}}', order.totalPriceSet.shopMoney.amount);
-            text = text + total + `\n`;
+            if (shippingAddress) {
+              let shppingAddr = '';
+              if (shippingAddress.address1)
+                shppingAddr = shppingAddr + shippingAddress.address1 + `, `;
+              if (shippingAddress.address2)
+                shppingAddr = shppingAddr + shippingAddress.address2 + `, `;
+              if (shippingAddress.city)
+                shppingAddr = shppingAddr + shippingAddress.city + `, `;
+              if (shippingAddress.province)
+                shppingAddr = shppingAddr + shippingAddress.province + `, `;
+              if (shippingAddress.country)
+                shppingAddr = shppingAddr + shippingAddress.country;
+              field['value'] = shppingAddr;
+            } else {
+              field['value'] = `No delivery location provided for this order`;
+            }
+            fields.push(field);
+            field = new Object();
+
+            field['title'] = `Cart Total:`;
+            let totalAmount = parseFloat(order.totalPriceSet.shopMoney.amount);
+            totalAmount = totalAmount.toFixed(2);
+            const cartTotal = moneyFormat.replace('{{amount}}', totalAmount);
+            field['value'] = cartTotal;
+            fields.push(field);
+            field = new Object();
+
+            let refundedAmount = parseFloat(order.totalRefundedSet.shopMoney.amount);
+            if (refundedAmount) {
+              field['title'] = `Refunded Amount:`;
+              refundedAmount = refundedAmount.toFixed(2);
+              const refundTotal = moneyFormat.replace('{{amount}}', refundedAmount);
+              field['value'] = refundTotal;
+              fields.push(field);
+              field = new Object();
+            }
+
             if (order.discountCode) {
-              text = text + `*Discount Codes:*\n`;
-              text = text + order.discountCode + `\n`;
+              field['title'] = `Discount Codes:`;
+              field['value'] = order.discountCode;
+              fields.push(field);
+              field = new Object();
             }
             if (order.tags.length) {
-              text = text + `*Tags:*\n`;
+              field['title'] = `Tags:`;
               let tags = '';
               order.tags.forEach((tag, idx) => {
-                if (idx != order.tags.length - 1) {
                   tags = tags + tag + ', ';
-                } else {
-                  tags = tags + tag;
-                }
               });
-              text = text + tags + `\n`;
+              field['value'] = tags.slice(0, -2);
+              fields.push(field);
+              field = new Object();
             }
-            text = text + `*Items:*\n`;
-            order.lineItems.edges.forEach(item => {
-              text = text + `- ${item.node.quantity} x ${item.node.name}\n`;
-            });
 
-            sendNotification(shopData['slack_webhook_url'], text, orderUrl);
+            field['title'] = `Line Items:`;
+            field['value'] = ``;
+            order.lineItems.edges.forEach(item => {
+              field['value'] = field['value'] + `- ${item.node.quantity} x ${item.node.name}\n`;
+            });
+            fields.push(field);
+            field = new Object();
+
+            if (order.refunds.length > 0) {
+              field['title'] = `Refunded Items:`;
+              field['value'] = ``;
+              order.refunds.forEach(refund => {
+                refund.refundLineItems.edges.forEach(refundedItem => {
+                  field['value'] = field['value'] + `- ${refundedItem.node.quantity} x ${refundedItem.node.lineItem.name}\n`;
+                });
+              });
+              fields.push(field);
+              field = new Object();
+            }
+
+            if (orderType == 'PARTIALLY_FULFILLED_ORDER' && order.fulfillments.length > 0) {
+              field['title'] = `Fulfilled Items:`;
+              field['value'] = ``;
+              order.fulfillments.forEach(fulfillment => {
+                if (fulfillment.status == 'CANCELLED')
+                  return;
+                if (fulfillment.trackingInfo.length > 0)
+                  field['value'] = field['value'] + `- ${fulfillment.trackingInfo[0].company}\n`
+                fulfillment.fulfillmentLineItems.edges.forEach(fulfilledItem => {
+                  field['value'] = field['value'] + ` • ${fulfilledItem.node.quantity} x ${fulfilledItem.node.lineItem.name}\n`;
+                });
+              });
+              if (!field['value'])
+                field['value'] = `No items fulfilled`;
+              fields.push(field);
+              field = new Object();
+            }
+
+            let customerUrl = null;
+            if (customer) {
+              customerUrl = `https://${shop}/admin/customers/${customer.legacyResourceId}`;
+            } else {
+              customerUrl = null;
+            }
+            sendNotification(shopData['slack_webhook_url'], fields, orderUrl, customerUrl);
 
             ctx.body = { result: 'success' };
           }
