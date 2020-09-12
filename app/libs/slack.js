@@ -1,8 +1,7 @@
-const { OrdersMajorFilled } = require('@shopify/polaris-icons');
 const { IncomingWebhook } = require('@slack/webhook');
 const CONSTANTS = require('@libs/constants');
 
-function sendNotification(webhook_url, fields, orderUrl, customerUrl = null) {
+function sendNotification(webhook_url, fields, orderUrl, customerUrl) {
   const webhook = new IncomingWebhook(webhook_url);
   let actions = [{
     type: 'button',
@@ -29,25 +28,17 @@ function sendNotification(webhook_url, fields, orderUrl, customerUrl = null) {
   })();
 }
 
-function sendFromOrder(order, orderType, shop, shopData) {
-  const customer = order.customer;
-  let customerUrl = null;
-  if (customer) {
-    customerUrl = `https://${shop}/admin/customers/${customer.id}`;
-  }
-  const shippingAddress = order.shipping_address;
-  const discountCodes = order.discount_codes;
-  const items = order.line_items;
-  const orderUrl = `https://${shop}/admin/orders/${order.id}`;
-  
+function sendNotificationFromOrder(order, orderType, shop, shopData) {  
   let fields = [];
   let field = new Object();
   
+  const orderUrl = `https://${shop}/admin/orders/${order.id}`;
   field['title'] = `${CONSTANTS.ORDER.TITLE[orderType]}:`;
   field['value'] = `<${orderUrl}|${order.name}>`;
   fields.push(field);
   field = new Object();
 
+  const customer = order.customer;
   field['title'] = `Customer:`;
   if (customer) {
     field['value'] = `${customer.first_name} ${customer.last_name} <${customer.email}>`;
@@ -57,6 +48,7 @@ function sendFromOrder(order, orderType, shop, shopData) {
   fields.push(field);
   field = new Object();
 
+  const shippingAddress = order.shipping_address;
   field['title'] = `Delivery Location:`;
   if (shippingAddress) {
     let shppingAddr = '';
@@ -98,6 +90,7 @@ function sendFromOrder(order, orderType, shop, shopData) {
     }
   }
 
+  const discountCodes = order.discount_codes;
   if (discountCodes.length > 0) {
     let codes = '';
     field['title'] = `Discount Codes:`;
@@ -108,6 +101,7 @@ function sendFromOrder(order, orderType, shop, shopData) {
     fields.push(field);
     field = new Object();
   }
+
   if (order.tags) {
     field['title'] = `Tags:`;
     field['value'] = order.tags;
@@ -115,50 +109,54 @@ function sendFromOrder(order, orderType, shop, shopData) {
     field = new Object();
   }
 
+  const items = order.line_items;
   field['title'] = `Line Items:`;
   field['value'] = ``;
   items.forEach(item => {
-    field['value'] = field['value'] + `- ${item.quantity} x ${item.title}\n`;
+    field.value = field.value + `- ${item.quantity} x ${item.title}\n`;
   });
   fields.push(field);
   field = new Object();
 
-  if (order.refunds.length > 0) {
-    field['title'] = `Refunded Items:`;
-    field['value'] = ``;
-    order.refunds.forEach(refund => {
-      refund.refund_line_items.forEach(refundedItem => {
-        field['value'] = field['value'] + `- ${refundedItem.quantity} x ${refundedItem.line_item.name}\n`;
-      });
-    });
-    if (field['value']) {
-      fields.push(field);
-      field = new Object();
-    }
-  }
+  // if (order.refunds.length > 0) {
+  //   field['title'] = `Refunded Items:`;
+  //   field['value'] = ``;
+  //   order.refunds.forEach(refund => {
+  //     refund.refund_line_items.forEach(refundedItem => {
+  //       field.value = field.value + `- ${refundedItem.quantity} x ${refundedItem.line_item.name}\n`;
+  //     });
+  //   });
+  //   if (field.value) {
+  //     fields.push(field);
+  //     field = new Object();
+  //   }
+  // }
 
   if (orderType == 'PARTIALLY_FULFILLED_ORDER' && order.fulfillments.length > 0) {
     field['title'] = `Fulfilled Items:`;
     field['value'] = ``;
     order.fulfillments.forEach(fulfillment => {
-      if (fulfillment.status == CONSTANTS.ORDER.FULFILLMENT.CANCELLED)
+      if (fulfillment.status == CONSTANTS.STATUS.CANCELLED)
         return;
       if (fulfillment.tracking_company)
-        field['value'] = field['value'] + `- ${fulfillment.tracking_company}\n`
+        field.value = field.value + `- ${fulfillment.tracking_company}\n`
       fulfillment.line_items.forEach(fulfilledItem => {
-        field['value'] = field['value'] + ` • ${fulfilledItem.quantity} x ${fulfilledItem.title}\n`;
+        field.value = field.value + ` • ${fulfilledItem.quantity} x ${fulfilledItem.title}\n`;
       });
     });
-    if (!field['value'])
-      field['value'] = `No items fulfilled`;
+    if (!field.value)
+      field.value = `No items fulfilled`;
     fields.push(field);
     field = new Object();
   }
 
+  let customerUrl = null;
+  if (customer)
+    customerUrl = `https://${shop}/admin/customers/${customer.id}`;
   sendNotification(shopData['slack_webhook_url'], fields, orderUrl, customerUrl);
 }
 
 module.exports = {
   sendNotification: sendNotification,
-  sendFromOrder: sendFromOrder
+  sendNotificationFromOrder: sendNotificationFromOrder
 }

@@ -29,6 +29,7 @@
     "@slack/webhook": "^5.0.3",
     "@zeit/next-css": "^1.0.1",
     "apollo-boost": "^0.4.9",
+    "cron": "^1.8.2",
     "dotenv": "^8.2.0",
     "graphql": "^15.3.0",
     "isomorphic-fetch": "^2.2.1",
@@ -45,7 +46,8 @@
     "react-apollo": "^3.1.5",
     "react-dom": "^16.13.1",
     "react-switch": "^5.0.1",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "shopify-api-node": "^3.4.4"
   },
   "_moduleAliases": {
     "@libs": "app/libs",

@@ -54,7 +54,7 @@ class Index extends React.Component {
       })
       .then(response => response.json())
       .then(data => {
-        if (data.result == 'success') {
+        if (data.result == CONSTANTS.STATUS.SUCCESS) {
           this.setState({
             toast: CONSTANTS.TOAST.SHOW,
             toastMsg: 'Settings updated successfully',
@@ -79,7 +79,7 @@ class Index extends React.Component {
       .then(response => response.json())
       .then(data => {
         console.log(data);
-        if (data.result == 'success') {
+        if (data.result == CONSTANTS.STATUS.SUCCESS) {
           this.setState({
             toast: CONSTANTS.TOAST.SHOW,
             toastMsg: 'Notification was successfully sent',

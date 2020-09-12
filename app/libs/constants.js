@@ -1,7 +1,9 @@
 module.exports = {
   SUBSCRIPTION: {
     PLAN: { TRIAL: 0, BASIC: 1, PREMIUM: 2 },
-    STATUS: { TRIAL: 0, ACTIVE: 1, CANCELLED: 2, DECLINED: 3, EXPIRED: 4 }
+    PLAN_NAME: { BASIC: 'basic', PREMIUM: 'premium' },
+    STATUS: { TRIAL: 0, ACTIVE: 1, CANCELLED: 2, DECLINED: 3, EXPIRED: 4 },
+    SHOPIFY_STATUS: { ACTIVE: 'ACTIVE', CANCELLED: 'CANCELLED', EXPIRED: 'EXPIRED' }
   },
   SLACK: { CONNECTED: 1, DISCONNECTED: 0 },
   SETTING: { DISABLED: 0, ENABLED: 1, LOCKED: 2 },
@@ -13,19 +15,19 @@ module.exports = {
     },
     CANCELLED_ORDER: {
       TITLE: 'Cancelled order notification',
-      DESCRIPTION: 'Automatically triggered when an order is cancelled. Includes order ID, customer\'s name and email, delivery location, refunded amount, discount code used, tags, refunded items and a link to access the order in Shopify.'
+      DESCRIPTION: 'Automatically triggered when an order is cancelled. Includes order ID, customer\'s name and email, delivery location, cart total, refunded amount, discount code used, tags and a link to access the order in Shopify.'
     },
     PAID_ORDER: {
       TITLE: 'Paid order notification',
-      DESCRIPTION: 'Automatically triggered when an order\'s payment is completed. Includes order ID, customer\'s name and email, delivery location, cart total, discount code used, tags and a link to access the order in Shopify.'
+      DESCRIPTION: 'Automatically triggered when an order\'s payment is completed. Includes order ID, customer\'s name and email, delivery location, cart total, refunded amount, discount code used, tags and a link to access the order in Shopify.'
     },
     FULFILLED_ORDER: {
       TITLE: 'Fulfilled order notification',
-      DESCRIPTION: 'Automatically triggered when an order\'s payment is fulfilled. Includes order ID, customer\'s name and email, delivery location, cart total, discount code used, tags and a link to access the order in Shopify.'
+      DESCRIPTION: 'Automatically triggered when an order\'s payment is fulfilled. Includes order ID, customer\'s name and email, delivery location, cart total, refunded amount, discount code used, tags and a link to access the order in Shopify.'
     },
     PARTIALLY_FULFILLED_ORDER: {
       TITLE: 'Partially fulfilled order notification',
-      DESCRIPTION: 'Automatically triggered when an order\'s payment is partially fulfilled. Includes order ID, customer\'s name and email, delivery location, cart total, discount code used, tags, fulfilled items and a link to access the order in Shopify.'
+      DESCRIPTION: 'Automatically triggered when an order\'s payment is partially fulfilled. Includes order ID, customer\'s name and email, delivery location, cart total, refunded amount, discount code used, tags, fulfilled items and a link to access the order in Shopify.'
     },
     SALES_REPORT: {
       TITLE: 'Daily sales report',
@@ -42,8 +44,9 @@ module.exports = {
       PARTIALLY_FULFILLED_ORDER: 'Partially Fulfilled Order',
     },
     FULFILLMENT: {
-      SUCCESS: 'success',
-      CANCELLED: 'cancelled'
+      SUCCESS: 'SUCCESS',
+      CANCELLED: 'CANCELLED'
     }
-  }
+  },
+  STATUS: { SUCCESS: 'success', FAILED: 'failed', CANCELLED: 'cancelled' }
 }

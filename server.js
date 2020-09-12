@@ -13,7 +13,7 @@ const serve = require('koa-static');
 const bodyParser = require('koa-body');
 const { default: graphQLProxy } = require('@shopify/koa-shopify-graphql-proxy');
 const { ApiVersion } = require('@shopify/koa-shopify-graphql-proxy');
-const {receiveWebhook, registerWebhook} = require('@shopify/koa-shopify-webhooks')
+const {receiveWebhook, registerWebhook} = require('@shopify/koa-shopify-webhooks');
 
 var dbConn = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -157,3 +157,9 @@ app.prepare().then(() => {
     console.log(`> Server started on port: ${port}`);
   });
 });
+
+var CronJob = require('cron').CronJob;
+var job = new CronJob('0 * * * * *', function() {
+  console.log('> Check: ', new Date());
+}, null, true);
+job.start();

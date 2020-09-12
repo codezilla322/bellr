@@ -2,8 +2,8 @@ const Router = require('koa-router');
 const router = new Router();
 const request = require('request');
 const shopModel = require('@models/shops');
-const basefunc = require('@libs/basefunc');
 const CONSTANTS = require('@libs/constants');
+const basefunc = require('@libs/basefunc');
 const { sendNotification } = require('@libs/slack');
 
 module.exports = function(verifyRequest) {
@@ -24,7 +24,7 @@ module.exports = function(verifyRequest) {
             if (basefunc.isExpired(shopData.trial_expiration_time)) {
               trial = false;
             } else {
-              trialExpiration = basefunc.getRemainingTime(shopData.trial_expiration_time);
+              trialExpiration = basefunc.getRemainingTimeInDay(shopData.trial_expiration_time);
             }
           }
           ctx.body = {
@@ -43,16 +43,14 @@ module.exports = function(verifyRequest) {
   router.post('/api/settings', verifyRequest(), (ctx) => {
     var notifications = ctx.request.body.settings;
     if (!notifications || Object.keys(notifications).length != CONSTANTS.NOTIFICATION.KEYS.length) {
-      console.log(Object.keys(notifications).length);
-      console.log(CONSTANTS.NOTIFICATION.KEYS.length);
-      ctx.body = { result: 'failed' };
+      ctx.body = { result: CONSTANTS.STATUS.FAILED };
       return;
     }
 
     for (var i=0;i<CONSTANTS.NOTIFICATION.KEYS.length;i++) {
       var key = CONSTANTS.NOTIFICATION.KEYS[i];
       if (!notifications.hasOwnProperty(key)) {
-        ctx.body = { result: 'failed' };
+        ctx.body = { result: CONSTANTS.STATUS.FAILED };
         return;
       } else {
         if (!notifications[key])
@@ -71,7 +69,7 @@ module.exports = function(verifyRequest) {
             notifications.sales_report = false;
 
           shopModel.updateShop(shop, {'notifications': JSON.stringify(notifications)});
-          ctx.body = { result: 'success' };
+          ctx.body = { result: CONSTANTS.STATUS.SUCCESS };
           resolve();
         });
     });
@@ -167,7 +165,7 @@ module.exports = function(verifyRequest) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Shopify-Access-Token': shopData['access_token']
+            'X-Shopify-Access-Token': shopData.access_token
           },
           body: query
         })
@@ -175,11 +173,10 @@ module.exports = function(verifyRequest) {
         .then(responseJson => {
           const orders = responseJson.data.orders.edges;
           if (orders.length == 0) {
-            ctx.body = { result: 'failed' };
+            ctx.body = { result: CONSTANTS.STATUS.FAILED };
           } else {
             const moneyFormat = responseJson.data.shop.currencyFormats.moneyFormat;
             const order = orders[0].node;
-            const customer = order.customer;
             let fields = [];
             let field = new Object();
             let financialStatus = order.displayFinancialStatus;
@@ -190,15 +187,13 @@ module.exports = function(verifyRequest) {
             } else if (fulfillmentStatus == 'PARTIALLY_FULFILLED') {
               orderType = 'PARTIALLY_FULFILLED_ORDER';
             } else {
-              if (financialStatus == 'PAID') {
+              if (financialStatus == 'PAID' || financialStatus == 'PARTIALLY_REFUNDED') {
                 orderType = 'PAID_ORDER';
-              } else if (financialStatus == 'PARTIALLY_REFUNDED') {
-
-              } else if (financialStatus == 'PENDING') {
+              } else if (financialStatus == 'PENDING' || financialStatus == 'AUTHORIZED') {
                 orderType = 'NEW_ORDER';
               }
             }
-            if (financialStatus == 'VOIDED')
+            if (financialStatus == 'VOIDED' || financialStatus == 'REFUNDED')
               orderType = 'CANCELLED_ORDER';
 
             field['title'] = `${CONSTANTS.ORDER.TITLE[orderType]}:`;
@@ -207,37 +202,38 @@ module.exports = function(verifyRequest) {
             fields.push(field);
             field = new Object();
 
-            field['title'] = `Customer:`;
+            field['title'] = 'Customer:';
+            const customer = order.customer;
             if (customer) {
               field['value'] = `${customer.displayName} <${customer.email}>`;
             } else {
-              field['value'] = `No customer info provided for this order`;
+              field['value'] = 'No customer info provided for this order';
             }
             fields.push(field);
             field = new Object();
 
-            field['title'] = `Delivery Location:`;
+            field['title'] = 'Delivery Location:';
             const shippingAddress = order.shippingAddress;
             if (shippingAddress) {
               let shppingAddr = '';
               if (shippingAddress.address1)
-                shppingAddr = shppingAddr + shippingAddress.address1 + `, `;
+                shppingAddr = shppingAddr + shippingAddress.address1 + ', ';
               if (shippingAddress.address2)
-                shppingAddr = shppingAddr + shippingAddress.address2 + `, `;
+                shppingAddr = shppingAddr + shippingAddress.address2 + ', ';
               if (shippingAddress.city)
-                shppingAddr = shppingAddr + shippingAddress.city + `, `;
+                shppingAddr = shppingAddr + shippingAddress.city + ', ';
               if (shippingAddress.province)
-                shppingAddr = shppingAddr + shippingAddress.province + `, `;
+                shppingAddr = shppingAddr + shippingAddress.province + ', ';
               if (shippingAddress.country)
                 shppingAddr = shppingAddr + shippingAddress.country;
               field['value'] = shppingAddr;
             } else {
-              field['value'] = `No delivery location provided for this order`;
+              field['value'] = 'No delivery location provided for this order';
             }
             fields.push(field);
             field = new Object();
 
-            field['title'] = `Cart Total:`;
+            field['title'] = 'Cart Total:';
             let totalAmount = parseFloat(order.totalPriceSet.shopMoney.amount);
             totalAmount = totalAmount.toFixed(2);
             const cartTotal = moneyFormat.replace('{{amount}}', totalAmount);
@@ -247,7 +243,7 @@ module.exports = function(verifyRequest) {
 
             let refundedAmount = parseFloat(order.totalRefundedSet.shopMoney.amount);
             if (refundedAmount) {
-              field['title'] = `Refunded Amount:`;
+              field['title'] = 'Refunded Amount:';
               refundedAmount = refundedAmount.toFixed(2);
               const refundTotal = moneyFormat.replace('{{amount}}', refundedAmount);
               field['value'] = refundTotal;
@@ -256,15 +252,16 @@ module.exports = function(verifyRequest) {
             }
 
             if (order.discountCode) {
-              field['title'] = `Discount Codes:`;
+              field['title'] = 'Discount Codes:';
               field['value'] = order.discountCode;
               fields.push(field);
               field = new Object();
             }
+
             if (order.tags.length) {
-              field['title'] = `Tags:`;
+              field['title'] = 'Tags:';
               let tags = '';
-              order.tags.forEach((tag, idx) => {
+              order.tags.forEach(tag => {
                   tags = tags + tag + ', ';
               });
               field['value'] = tags.slice(0, -2);
@@ -272,40 +269,40 @@ module.exports = function(verifyRequest) {
               field = new Object();
             }
 
-            field['title'] = `Line Items:`;
-            field['value'] = ``;
+            field['title'] = 'Line Items:';
+            field['value'] = '';
             order.lineItems.edges.forEach(item => {
-              field['value'] = field['value'] + `- ${item.node.quantity} x ${item.node.name}\n`;
+              field.value = field.value + `- ${item.node.quantity} x ${item.node.name}\n`;
             });
             fields.push(field);
             field = new Object();
 
-            if (order.refunds.length > 0) {
-              field['title'] = `Refunded Items:`;
-              field['value'] = ``;
-              order.refunds.forEach(refund => {
-                refund.refundLineItems.edges.forEach(refundedItem => {
-                  field['value'] = field['value'] + `- ${refundedItem.node.quantity} x ${refundedItem.node.lineItem.name}\n`;
-                });
-              });
-              fields.push(field);
-              field = new Object();
-            }
+            // if (order.refunds.length > 0) {
+            //   field['title'] = 'Refunded Items:';
+            //   field['value'] = '';
+            //   order.refunds.forEach(refund => {
+            //     refund.refundLineItems.edges.forEach(refundedItem => {
+            //       field.value = field.value + `- ${refundedItem.node.quantity} x ${refundedItem.node.lineItem.name}\n`;
+            //     });
+            //   });
+            //   fields.push(field);
+            //   field = new Object();
+            // }
 
             if (orderType == 'PARTIALLY_FULFILLED_ORDER' && order.fulfillments.length > 0) {
-              field['title'] = `Fulfilled Items:`;
-              field['value'] = ``;
+              field['title'] = 'Fulfilled Items:';
+              field['value'] = '';
               order.fulfillments.forEach(fulfillment => {
-                if (fulfillment.status == 'CANCELLED')
+                if (fulfillment.status == CONSTANTS.ORDER.FULFILLMENT.CANCELLED)
                   return;
                 if (fulfillment.trackingInfo.length > 0)
-                  field['value'] = field['value'] + `- ${fulfillment.trackingInfo[0].company}\n`
+                  field.value = field.value + `- ${fulfillment.trackingInfo[0].company}\n`
                 fulfillment.fulfillmentLineItems.edges.forEach(fulfilledItem => {
-                  field['value'] = field['value'] + ` • ${fulfilledItem.node.quantity} x ${fulfilledItem.node.lineItem.name}\n`;
+                  field.value = field.value + `• ${fulfilledItem.node.quantity} x ${fulfilledItem.node.lineItem.name}\n`;
                 });
               });
-              if (!field['value'])
-                field['value'] = `No items fulfilled`;
+              if (!field.value)
+                field.value = 'No items fulfilled';
               fields.push(field);
               field = new Object();
             }
@@ -318,7 +315,7 @@ module.exports = function(verifyRequest) {
             }
             sendNotification(shopData['slack_webhook_url'], fields, orderUrl, customerUrl);
 
-            ctx.body = { result: 'success' };
+            ctx.body = { result: CONSTANTS.STATUS.SUCCESS };
           }
           resolve();
         });
@@ -329,13 +326,13 @@ module.exports = function(verifyRequest) {
     const shop = ctx.session.shop;
     const shopData = await shopModel.findShopByName(shop);
     const plan = ctx.query.plan.toUpperCase();
-    if (!CONSTANTS.SUBSCRIPTION.PLAN[plan] || shopData['subscription_plan'] == CONSTANTS.SUBSCRIPTION.PLAN[plan]) {
+    if (!CONSTANTS.SUBSCRIPTION.PLAN[plan] || shopData.subscription_plan == CONSTANTS.SUBSCRIPTION.PLAN[plan]) {
       ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
       return;
     }
     console.log(`> Chosen a plan: ${shop} - ${plan}`);
     var fee = process.env.APP_BASIC_PLAN_FEE;
-    if (plan == 'premium')
+    if (plan == CONSTANTS.SUBSCRIPTION.PLAN_NAME.PREMIUM)
       fee = process.env.APP_PREMIUM_PLAN_FEE;
 
     const query = JSON.stringify({
@@ -372,7 +369,7 @@ module.exports = function(verifyRequest) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Shopify-Access-Token': shopData['access_token']
+            'X-Shopify-Access-Token': shopData.access_token
           },
           body: query
         })
@@ -400,11 +397,6 @@ module.exports = function(verifyRequest) {
 
   router.get('/slack/oauth', verifyRequest(), (ctx) => {
     const shop = ctx.session.shop;
-    // if (!shop) {
-    //   ctx.response.status = 500;
-    //   ctx.response.body = 'Try Slackify integration from your shop admin panel.';
-    //   return;
-    // }
     if (!ctx.query.code) {
       console.log(`> Invalid slack authentication code: ${shop}`);
       ctx.response.status = 500;
@@ -437,6 +429,7 @@ module.exports = function(verifyRequest) {
                 slack_webhook_url: body.incoming_webhook.url,
                 is_slack_connected: CONSTANTS.SLACK.CONNECTED
               });
+              ctx.response.body = 'Connected to slack channel';
               ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
             }
             resolve();

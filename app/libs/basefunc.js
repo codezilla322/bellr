@@ -2,11 +2,10 @@ const CONSTANTS = require('@libs/constants');
 
 function getCurrentTimestamp() {
   const now = new Date();
-  //return now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2) + ' ' + ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
   return `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
 }
 
-function getRemainingTime(timestamp) {
+function getRemainingTimeInDay(timestamp) {
   const currentTimestamp = Math.floor(new Date().getTime() / 1000);
   const remainingTimeInSec = timestamp - currentTimestamp;
   const remainingTimeInDay = Math.ceil(remainingTimeInSec / (24 * 60 * 60));
@@ -38,7 +37,7 @@ function isSendable(shopData, orderType) {
 
 module.exports = {
   getCurrentTimestamp: getCurrentTimestamp,
-  getRemainingTime: getRemainingTime,
+  getRemainingTimeInDay: getRemainingTimeInDay,
   isExpired: isExpired,
   isSendable: isSendable
 };

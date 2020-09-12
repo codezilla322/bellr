@@ -1,4 +1,4 @@
-const basefunc = require('@libs/basefunc');
+const { getCurrentTimestamp } = require('@libs/basefunc');
 
 module.exports = {
   addShop: function(shop, accessToken) {
@@ -13,7 +13,7 @@ module.exports = {
           shop_origin: shop,
           access_token: accessToken,
           notifications: '{"new_order":true,"cancelled_order":true,"paid_order":true,"fulfilled_order":true,"partially_fulfilled_order":true,"sales_report":false}',
-          first_installed_time: basefunc.getCurrentTimestamp(),
+          first_installed_time: getCurrentTimestamp(),
           trial_expiration_time: Math.floor(new Date().getTime() / 1000) + free_trial_period * 24 * 60 * 60,
         };
         var query = "INSERT INTO shops SET ?";

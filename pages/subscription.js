@@ -21,7 +21,7 @@ class Subscription extends React.Component {
   handleChooseBasic() {
     const app = createApp({
       apiKey: process.env.API_KEY,
-      shopOrigin: Cookies.get("shopOrigin")
+      shopOrigin: Cookies.get('shopOrigin')
     });
     const redirect = Redirect.create(app);
     return redirect.dispatch(Redirect.Action.REMOTE, `${process.env.HOST}/api/subscription/?plan=basic`);
@@ -29,7 +29,7 @@ class Subscription extends React.Component {
   handleChoosePremium() {
     const app = createApp({
       apiKey: process.env.API_KEY,
-      shopOrigin: Cookies.get("shopOrigin")
+      shopOrigin: Cookies.get('shopOrigin')
     });
     const redirect = Redirect.create(app);
     return redirect.dispatch(Redirect.Action.REMOTE, `${process.env.HOST}/api/subscription/?plan=premium`);
