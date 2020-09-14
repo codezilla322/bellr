@@ -39,7 +39,7 @@ class Index extends React.Component {
   }
 
   handleChange = (key, checked) => {
-    let settings = this.state.settings;
+    var settings = this.state.settings;
     settings[key] = checked;
     this.setState({ settings: settings });
   }

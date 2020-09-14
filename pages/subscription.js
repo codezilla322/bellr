@@ -37,10 +37,10 @@ class Subscription extends React.Component {
   render() {
     if (this.state.loading)
       return null;
-    let buttonBasic = <Button primary onClick={this.handleChooseBasic}>Choose this plan</Button>;
+    var buttonBasic = <Button primary onClick={this.handleChooseBasic}>Choose this plan</Button>;
     if (this.state.paid && this.state.plan == CONSTANTS.SUBSCRIPTION.PLAN.BASIC)
       buttonBasic = <div className="badge-wrapper"><Badge status="info" size="medium">Your Current Plan</Badge></div>;
-    let buttonPremium = <Button primary onClick={this.handleChoosePremium}>Choose this plan</Button>;
+    var buttonPremium = <Button primary onClick={this.handleChoosePremium}>Choose this plan</Button>;
     if (this.state.paid && this.state.plan == CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM)
       buttonPremium = <div className="badge-wrapper"><Badge status="info" size="medium">Your Current Plan</Badge></div>;
     return (

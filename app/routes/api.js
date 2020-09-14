@@ -31,7 +31,7 @@ module.exports = function(verifyRequest) {
             trial: trial,
             trialExpiration: trialExpiration,
             paid: paid,
-            connected: shopData.is_slack_connected ? true : false,
+            connected: shopData.slack_connected ? true : false,
             plan: shopData.subscription_plan,
             settings: JSON.parse(shopData.notifications)
           };
@@ -313,7 +313,7 @@ module.exports = function(verifyRequest) {
             } else {
               customerUrl = null;
             }
-            sendNotification(shopData['slack_webhook_url'], fields, orderUrl, customerUrl);
+            sendNotification(shopData.slack_webhook_url, fields, orderUrl, customerUrl);
 
             ctx.body = { result: CONSTANTS.STATUS.SUCCESS };
           }
@@ -427,7 +427,7 @@ module.exports = function(verifyRequest) {
               shopModel.updateShop(shop, {
                 slack_access: bodyJSON,
                 slack_webhook_url: body.incoming_webhook.url,
-                is_slack_connected: CONSTANTS.SLACK.CONNECTED
+                slack_connected: CONSTANTS.SLACK.CONNECTED
               });
               ctx.response.body = 'Connected to slack channel';
               ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
