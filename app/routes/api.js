@@ -10,7 +10,7 @@ module.exports = function(verifyRequest) {
   router.get('/api/settings', verifyRequest(), (ctx) => {
     const shop = ctx.session.shop;
     return new Promise(function(resolve, reject) {
-      shopModel.findShopByName(shop)
+      shopModel.getShopByName(shop)
         .then(shopData => {
           let trial = true, trialExpiration = 0, paid = false;
           if (shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.TRIAL) {
@@ -62,7 +62,7 @@ module.exports = function(verifyRequest) {
 
     const shop = ctx.session.shop;
     return new Promise(function(resolve, reject) {
-      shopModel.findShopByName(shop)
+      shopModel.getShopByName(shop)
         .then(shopData => {
           if (shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM ||
             shopData.subscription_status != CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE)
@@ -77,7 +77,7 @@ module.exports = function(verifyRequest) {
 
   router.get('/test', verifyRequest(), async (ctx) => {
     const shop = ctx.session.shop;
-    const shopData = await shopModel.findShopByName(shop);
+    const shopData = await shopModel.getShopByName(shop);
 
     const query = JSON.stringify({
       query: `{
@@ -324,7 +324,7 @@ module.exports = function(verifyRequest) {
 
   router.get('/api/subscription', verifyRequest(), async (ctx) => {
     const shop = ctx.session.shop;
-    const shopData = await shopModel.findShopByName(shop);
+    const shopData = await shopModel.getShopByName(shop);
     const plan = ctx.query.plan.toUpperCase();
     if (!CONSTANTS.SUBSCRIPTION.PLAN[plan] || shopData.subscription_plan == CONSTANTS.SUBSCRIPTION.PLAN[plan]) {
       ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);

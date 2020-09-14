@@ -34,7 +34,7 @@ module.exports = {
   addShop: function(shop, accessToken) {
     Promise.all([
       this.getSettings(shop, accessToken),
-      this.findShopByName(shop)
+      this.getShopByName(shop)
     ])
     .then((result) => {
       const settings = result[0];
@@ -63,7 +63,7 @@ module.exports = {
       });
     });
   },
-  findShopByName: function(shop) {
+  getShopByName: function(shop) {
     var query = "SELECT * FROM shops WHERE shop_origin = ?";
     return new Promise(function(resolve, reject) {
       db.query(query, shop, function(err, result) {
@@ -93,6 +93,16 @@ module.exports = {
     var query = "UPDATE shops SET ? WHERE subscription_id = ?";
     return new Promise(function(resolve, reject) {
       db.query(query, [subscriptionData, subscriptionId], function(err, result) {
+        if (err)
+          return reject(err);
+        return resolve(result);
+      });
+    });
+  },
+  getShopsByTimezone: function(tzOffsetPlus = null, tzOffsetMinus = null) {
+    var query = "SELECT * FROM shops WHERE timezone = ? or timezone = ?";
+    return new Promise(function(resolve, reject) {
+      db.query(query, [tzOffsetPlus, tzOffsetMinus], function(err, result) {
         if (err)
           return reject(err);
         return resolve(result);

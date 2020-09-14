@@ -1,22 +1,52 @@
+const moment = require('moment');
+const { getShopsByTimezone } = require('@models/shops');
+const CONSTANTS = require('@libs/constants');
 const { createReport } = require('@libs/order');
 const { sendNotification } = require('@libs/slack');
 
 module.exports = {
   checkStores: async function() {
-    const now = new Date();
-    const curHour = now.getUTCHours();
     const targetHour = parseInt(process.env.REPORT_TIME);
-    let offset1 = 0;
-    let offset2 = 0;
+    /*************************************/
+    // const curHour = moment.utc().hour();
+    const curHour = moment.utc().second();
+    /*************************************/
+    if (curHour > 23)
+      return;
+
+    let tzOffsetPlus = 0;
+    let tzOffsetMinus = 0;
     if (targetHour > curHour) {
-      offset1 = targetHour - curHour;  // 9/13
-      offset2 = targetHour - curHour - 24; // 9/12
+      tzOffsetPlus = targetHour - curHour;
+      tzOffsetMinus = targetHour - curHour - 24;
     } else if (targetHour < curHour) {
-      offset1 = targetHour + 24 - curHour; // 9/14
-      offset2 = targetHour - curHour; // 9/13
+      tzOffsetPlus = targetHour + 24 - curHour;
+      tzOffsetMinus = targetHour - curHour;
+    }
+    if (tzOffsetPlus >= 0 && tzOffsetPlus <= 13) {
+      tzOffsetPlus = '+' + ('0' + tzOffsetPlus).slice(-2);
+    } else {
+      tzOffsetPlus = null;
+    }
+    if (tzOffsetMinus < 0 && tzOffsetMinus >= -12) {
+      tzOffsetMinus = -tzOffsetMinus;
+      tzOffsetMinus = '-' + ('0' + tzOffsetMinus).slice(-2);
+    } else {
+      tzOffsetMinus = null;
     }
 
-    // $slackFields = createReport(shopData);
-    // sendNotification(shopData.slack_webhook_url, $slackFields);
+    const shops = await getShopsByTimezone(tzOffsetPlus, tzOffsetMinus);
+    shops.forEach(shopData => {
+      // if (shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM ||
+      //   shopData.subscription_status != CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE)
+      //   return;
+      // notifications = JSON.parse(shopData.notifications);
+      // if (!notifications.sales_report)
+      //   return;
+      createReport(shopData)
+        // .then(slackFields => {
+        //   sendNotification(shopData.slack_webhook_url, slackFields);
+        // });
+    });
   }
 }

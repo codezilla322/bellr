@@ -11,7 +11,7 @@ module.exports = function(webhook) {
     const shop = ctx.headers['x-shopify-shop-domain'];
     const order = ctx.request.body;
     console.log(`> New order created: ${shop} - ${order.id}`);
-    const shopData = await shopModel.findShopByName(shop);
+    const shopData = await shopModel.getShopByName(shop);
 
     if (isSendable(shopData, 'new_order'))
       sendNotificationFromOrder(order, 'NEW_ORDER', shop, shopData);
@@ -21,7 +21,7 @@ module.exports = function(webhook) {
     const shop = ctx.headers['x-shopify-shop-domain'];
     const order = ctx.request.body;
     console.log(`> Order cancelled: ${shop} - ${order.id}`);
-    const shopData = await shopModel.findShopByName(shop);
+    const shopData = await shopModel.getShopByName(shop);
     
     if (isSendable(shopData, 'cancelled_order'))
       sendNotificationFromOrder(order, 'CANCELLED_ORDER', shop, shopData);
@@ -31,7 +31,7 @@ module.exports = function(webhook) {
     const shop = ctx.headers['x-shopify-shop-domain'];
     const order = ctx.request.body;
     console.log(`> Order paid: ${shop} - ${order.id}`);
-    const shopData = await shopModel.findShopByName(shop);
+    const shopData = await shopModel.getShopByName(shop);
 
     if (isSendable(shopData, 'paid_order'))
       sendNotificationFromOrder(order, 'PAID_ORDER', shop, shopData);
@@ -41,7 +41,7 @@ module.exports = function(webhook) {
     const shop = ctx.headers['x-shopify-shop-domain'];
     const order = ctx.request.body;
     console.log(`> Order fulfilled: ${shop} - ${order.id}`);
-    const shopData = await shopModel.findShopByName(shop);
+    const shopData = await shopModel.getShopByName(shop);
 
     if (isSendable(shopData, 'fulfilled_order'))
       sendNotificationFromOrder(order, 'FULFILLED_ORDER', shop, shopData);
@@ -51,7 +51,7 @@ module.exports = function(webhook) {
     const shop = ctx.headers['x-shopify-shop-domain'];
     const order = ctx.request.body;
     console.log(`> Order partially fulfilled: ${shop} - ${order.id}`);
-    const shopData = await shopModel.findShopByName(shop);
+    const shopData = await shopModel.getShopByName(shop);
 
     if (isSendable(shopData, 'partially_fulfilled_order'))
       sendNotificationFromOrder(order, 'PARTIALLY_FULFILLED_ORDER', shop, shopData);

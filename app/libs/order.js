@@ -1,8 +1,9 @@
 const Shopify = require('shopify-api-node');
+const moment = require('moment');
 const CONSTANTS = require('@libs/constants');
 
 function createNotification(order, orderType, shop, moneyFormat) {
-  var fields = [];
+  let fields = [];
   var field = new Object();
 
   const orderUrl = `https://${shop}/admin/orders/${order.id}`;
@@ -129,23 +130,91 @@ function createNotification(order, orderType, shop, moneyFormat) {
 }
 
 function createReport(shopData) {
+  const targetHour = parseInt(process.env.REPORT_TIME);
+  /***********************************/
+  // const curHour = moment.utc.hour();
+  const curHour = moment.utc().second();
+  /***********************************/
+  const sign = shopData.timezone.slice(0, 1);
+  let today = moment.utc();
+
+  if (targetHour > curHour) {
+    if (sign == '+') {
+      today = today.subtract(1, 'days');
+    } else if (sign == '-') {
+      today = today.subtract(2, 'days');
+    }
+  } else if (targetHour < curHour) {
+    if (sign == '-') {
+      today = today.subtract(1, 'days');
+    }
+  }
+
+  /********************************/
+  today = today.subtract(2, 'days');
+  /********************************/
+
+  let yesterday = today.clone();
+  yesterday = yesterday.subtract(1, 'days');
+  let dayOfLastweek = today.clone();
+  dayOfLastweek = dayOfLastweek.subtract(7, 'days');
+
   const shopify = new Shopify({
     shopName: shopData.shop_origin,
     accessToken: shopData.access_token,
     apiVersion: '2020-07'
   });
+
+  return new Promise(function(resolve, reject) {
+    Promise.all([
+      getOrdersOfDay(shopify, today, shopData.timezone),
+      getOrdersOfDay(shopify, yesterday, shopData.timezone),
+      getOrdersOfDay(shopify, dayOfLastweek, shopData.timezone)
+    ])
+    .then((result) => {
+      console.log('TODAY!');
+      console.log(result[0].length);
+      console.log('YESTERDAY!');
+      console.log(result[1].length);
+      console.log('LASTWEEK!');
+      console.log(result[2].length);
+      let fields = [];
+
+      resolve(fields);
+    });
+  });
+}
+
+function getOrdersOfDay(shopify, date, timezone) {
+  const sign = timezone.slice(0, 1);
+  let targetDate = date.clone();
+  if (sign == '+') {
+    targetDate.hour(0).minute(0).second(0);
+  } else if (sign == '-') {
+    targetDate.hour(23).minute(0).second(0);
+  }
+  targetDate.utcOffset(timezone + ':00');
+  targetDate.hour(0).minute(0).second(0);
+
+  let createdAtMin = targetDate.format();
+  targetDate.add(1, 'days');
+  let createdAtMax = targetDate.format();
   return new Promise(async function(resolve, reject) {
-    let params = { limit: 250 };
+    let params = {
+      created_at_min: createdAtMin,
+      created_at_max: createdAtMax,
+      status: 'any',
+      limit: 5
+    };
     let orders = [];
-    let fields = [];
     do {
       const ordersResult = await shopify.order.list(params);
+      console.log(ordersResult.length);
       orders = orders.concat(ordersResult);
       params = ordersResult.nextPageParameters;
     } while (params !== undefined);
-    console.log(orders);
-
-    resolve(fields);
+    
+    resolve(orders);
   });
 }
 
