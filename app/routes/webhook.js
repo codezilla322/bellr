@@ -66,7 +66,7 @@ module.exports = function(webhook) {
     const graphqlApiId = appSubscription.admin_graphql_api_id;
     const subscriptionId = graphqlApiId.split('/')[4];
     var plan = appSubscription.name;
-    plan = plan.split(' ')[1];
+    plan = plan.split(' ')[1].toUpperCase();
     var subscriptionPlan = CONSTANTS.SUBSCRIPTION.PLAN.BASIC;
     if (plan == CONSTANTS.SUBSCRIPTION.PLAN_NAME.PREMIUM)
       subscriptionPlan = CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM;

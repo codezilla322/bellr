@@ -313,7 +313,7 @@ module.exports = function(verifyRequest) {
             } else {
               customerUrl = null;
             }
-            sendNotification(shopData.slack_webhook_url, fields, orderUrl, customerUrl);
+            sendNotification(shopData.slack_webhook_url, fields, ' ', orderUrl, customerUrl);
 
             ctx.body = { result: CONSTANTS.STATUS.SUCCESS };
           }
@@ -392,7 +392,7 @@ module.exports = function(verifyRequest) {
     };
     shopModel.updateShop(shop, shopData);
     console.log(`> Subscription activated: ${shop} - ${subscriptionId}`);
-    ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}/subscription`);
+    ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
   });
 
   router.get('/slack/oauth', verifyRequest(), (ctx) => {

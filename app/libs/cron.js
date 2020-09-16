@@ -37,16 +37,16 @@ module.exports = {
 
     const shops = await getShopsByTimezone(tzOffsetPlus, tzOffsetMinus);
     shops.forEach(shopData => {
-      // if (shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM ||
-      //   shopData.subscription_status != CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE)
-      //   return;
-      // notifications = JSON.parse(shopData.notifications);
-      // if (!notifications.sales_report)
-      //   return;
+      if (shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM ||
+        shopData.subscription_status != CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE)
+        return;
+      notifications = JSON.parse(shopData.notifications);
+      if (!notifications.sales_report)
+        return;
       createReport(shopData)
-        // .then(slackFields => {
-        //   sendNotification(shopData.slack_webhook_url, slackFields);
-        // });
+        .then(report => {
+          sendNotification(shopData.slack_webhook_url, report.fields, report.title);
+        });
     });
   }
 }

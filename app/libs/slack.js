@@ -2,7 +2,7 @@ const { IncomingWebhook } = require('@slack/webhook');
 const { createNotification } = require('@libs/order');
 
 module.exports = {
-  sendNotification: function(webhook_url, fields, orderUrl = null, customerUrl = null) {
+  sendNotification: function(webhook_url, fields, text = ' ', orderUrl = null, customerUrl = null) {
     const webhook = new IncomingWebhook(webhook_url);
     var actions = [];
     if (orderUrl) {
@@ -21,7 +21,7 @@ module.exports = {
     }
     (async () => {
       await webhook.send({
-        text: ' ',
+        text: text,
         attachments: [{
             color: '#CBEFFF',
             fields: fields,
@@ -37,6 +37,6 @@ module.exports = {
     if (order.customer)
       customerUrl = `https://${shop}/admin/customers/${order.customer.id}`;
     $fields = createNotification(order, orderType, shop, shopData.money_format);
-    this.sendNotification(shopData.slack_webhook_url, fields, orderUrl, customerUrl);
+    this.sendNotification(shopData.slack_webhook_url, fields, ' ', orderUrl, customerUrl);
   }
 }
