@@ -160,7 +160,7 @@ app.prepare().then(() => {
   });
 });
 
-const job = new CronJob('* * * * * *', function() {
+const job = new CronJob('* 0 * * * *', function() {
   console.log('> Check for report');
   checkStores();
 }, null, true);

@@ -132,8 +132,8 @@ function createNotification(order, orderType, shop, moneyFormat) {
 function createReport(shopData) {
   const targetHour = parseInt(process.env.REPORT_TIME);
   /***********************************/
-  // const curHour = moment.utc.hour();
-  const curHour = moment.utc().second();
+  const curHour = moment.utc.hour();
+  // const curHour = moment.utc().second();
   /***********************************/
   const sign = shopData.timezone.slice(0, 1);
   let today = moment.utc();
@@ -151,7 +151,7 @@ function createReport(shopData) {
   }
 
   /********************************/
-  today = today.subtract(4, 'days');
+  // today = today.subtract(4, 'days');
   /********************************/
 
   let yesterday = today.clone();
@@ -379,10 +379,6 @@ function getReportOfDay(shopify, date, timezone) {
     if (orderCount > 0)
       aov = parseFloat(totalOrders / orderCount).toFixed(2);
 
-    /************************************/
-    // referrings['www.google.com'] = 555555;
-    // referrings['www.bing.com'] = 333333;
-    /************************************/
     referrings = sortByValue(referrings, totalOrders);
     landings = sortByValue(landings, totalOrders);
     gateways = sortByValue(gateways, totalTransactions);

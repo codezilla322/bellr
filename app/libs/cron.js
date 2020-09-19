@@ -8,11 +8,11 @@ module.exports = {
   checkStores: async function() {
     const targetHour = parseInt(process.env.REPORT_TIME);
     /*************************************/
-    // const curHour = moment.utc().hour();
-    const curHour = moment.utc().second();
+    const curHour = moment.utc().hour();
+    // const curHour = moment.utc().second();
+    // if (curHour > 23)
+    //   return;
     /*************************************/
-    if (curHour > 23)
-      return;
 
     let tzOffsetPlus = 0;
     let tzOffsetMinus = 0;
