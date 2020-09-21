@@ -11,10 +11,10 @@ const cors = require('@koa/cors');
 const Router = require('koa-router');
 const serve = require('koa-static');
 const bodyParser = require('koa-body');
+const CronJob = require('cron').CronJob;
 const { default: graphQLProxy } = require('@shopify/koa-shopify-graphql-proxy');
 const { ApiVersion } = require('@shopify/koa-shopify-graphql-proxy');
 const { receiveWebhook, registerWebhook } = require('@shopify/koa-shopify-webhooks');
-const CronJob = require('cron').CronJob;
 const { checkStores } = require('@libs/cron');
 
 var dbConn = mysql.createConnection({
@@ -160,7 +160,7 @@ app.prepare().then(() => {
   });
 });
 
-const job = new CronJob('* 0 * * * *', function() {
+const job = new CronJob('0 0 * * * *', function() {
   console.log('> Check for report');
   checkStores();
 }, null, true);

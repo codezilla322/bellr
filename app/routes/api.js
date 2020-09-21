@@ -4,7 +4,7 @@ const request = require('request');
 const shopModel = require('@models/shops');
 const CONSTANTS = require('@libs/constants');
 const basefunc = require('@libs/basefunc');
-const { sendNotification } = require('@libs/slack');
+const { sendHi, sendNotification } = require('@libs/slack');
 
 module.exports = function(verifyRequest) {
   router.get('/api/settings', verifyRequest(), (ctx) => {
@@ -429,6 +429,7 @@ module.exports = function(verifyRequest) {
                 slack_webhook_url: body.incoming_webhook.url,
                 slack_connected: CONSTANTS.SLACK.CONNECTED
               });
+              sendHi(body.incoming_webhook.url);
               ctx.response.body = 'Connected to slack channel';
               ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
             }

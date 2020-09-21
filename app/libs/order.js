@@ -132,7 +132,7 @@ function createNotification(order, orderType, shop, moneyFormat) {
 function createReport(shopData) {
   const targetHour = parseInt(process.env.REPORT_TIME);
   /***********************************/
-  const curHour = moment.utc.hour();
+  const curHour = moment.utc().hour();
   // const curHour = moment.utc().second();
   /***********************************/
   const sign = shopData.timezone.slice(0, 1);
