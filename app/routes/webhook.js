@@ -3,7 +3,7 @@ const router = new Router({ prefix: '/webhook' });
 const shopModel = require('@models/shops');
 const CONSTANTS = require('@libs/constants');
 const { isSendable } = require('@libs/basefunc');
-const { sendNotificationFromOrder } = require('@libs/slack');
+const { sendNotification, sendNotificationFromOrder } = require('@libs/slack');
 
 module.exports = function(webhook) {
 
@@ -55,6 +55,89 @@ module.exports = function(webhook) {
 
     if (isSendable(shopData, 'partially_fulfilled_order'))
       sendNotificationFromOrder(order, 'PARTIALLY_FULFILLED_ORDER', shop, shopData);
+  });
+
+  router.post('/product/update', webhook, async (ctx) => {
+    const shop = ctx.headers['x-shopify-shop-domain'];
+    const product = ctx.request.body;
+    console.log(`> Product updated: ${shop} - ${product.id}`);
+    const shopData = await shopModel.getShopByName(shop);
+
+    if (!isSendable(shopData, 'low_stock', true))
+      return;
+
+    const productUrl = `https://${shop}/admin/products/${product.id}`;
+    product.variants.forEach(variant => {
+      const variantId = variant.id;
+      if (variant.inventory_quantity > shopData.notifications.low_stock.limit) {
+        delete inventory[variantId];
+        return;
+      }
+
+      const oldInventoryStatus = inventory[variantId];
+      const currentTimestamp = Math.floor(new Date().getTime() / 1000);
+      if (oldInventoryStatus) {
+        if (oldInventoryStatus.quantity == variant.inventory_quantity &&
+          (currentTimestamp - oldInventoryStatus.lastSent) < 60 * 60 * 24)
+          return;
+      }
+      inventory[variantId] = {
+        quantity: variant.inventory_quantity,
+        lastSent: currentTimestamp
+      }
+
+      const variantUrl = `https://${shop}/admin/products/${product.id}/variants/${variantId}`;
+      let fields = [];
+      let field = new Object();
+      field['title'] = `Product:`;
+      if (product.options.length > 1 && product.variants.length > 1) {
+        field['value'] = `<${variantUrl}|${product.title} - ${variant.title}>`;
+      } else {
+        field['value'] = `<${productUrl}|${product.title}>`;
+      }
+      fields.push(field);
+      field = new Object();
+
+      if (variant.sku) {
+        field['title'] = `SKU:`;
+        field['value'] = `${variant.sku}`;
+        fields.push(field);
+        field = new Object();
+      }
+
+      if (product.options.length > 1) {
+        product.options.forEach((option, idx) => {
+          field['title'] = `${option.name}:`;
+          idx += 1;
+          field['value'] = `${variant['option'+idx]}`;
+          if (field.value) {
+            fields.push(field);
+            field = new Object();
+          }
+        });
+      }
+
+      field['title'] = `Inventory Quantity:`;
+      field['value'] = `${variant.inventory_quantity}`;
+      fields.push(field);
+      field = new Object();
+
+      let actions = [];
+      actions.push({
+        type: 'button',
+        text: 'View Product',
+        url: productUrl
+      });
+      if (product.options.length > 1 && product.variants.length > 1) {
+        actions.push({
+          type: 'button',
+          text: 'View Variant',
+          url: variantUrl
+        });
+      }
+
+      sendNotification(shopData.slack_webhook_url, fields, 'Low Stock Alert', actions);
+    });
   });
 
   router.post('/subscriptions/update', webhook, async (ctx) => {

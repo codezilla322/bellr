@@ -8,7 +8,7 @@ module.exports = {
   SLACK: { CONNECTED: 1, DISCONNECTED: 0 },
   SETTING: { DISABLED: 0, ENABLED: 1, LOCKED: 2 },
   NOTIFICATION: {
-    KEYS: ['new_order', 'cancelled_order', 'paid_order', 'fulfilled_order', 'partially_fulfilled_order', 'sales_report'],
+    KEYS: ['new_order', 'cancelled_order', 'paid_order', 'fulfilled_order', 'partially_fulfilled_order', 'sales_report', 'low_stock'],
     NEW_ORDER: {
       TITLE: 'New order notification',
       DESCRIPTION: 'Automatically triggered when a new order is created. Includes order ID, customer\'s name and email, delivery location, cart total, discount code used(if any), tags(if any) and a link to access the order in Shopify.'
@@ -32,6 +32,10 @@ module.exports = {
     SALES_REPORT: {
       TITLE: 'Daily sales report',
       DESCRIPTION: 'A daily summary of total revenue from the day before automatic notification is sent.'
+    },
+    LOW_STOCK: {
+      TITLE: 'Low stock notification',
+      DESCRIPTION: 'Automatically triggered when a product\'s stock is equal or lower than limit.'
     }
   },
   TOAST: { HIDDEN: 0, SHOW: 1 },

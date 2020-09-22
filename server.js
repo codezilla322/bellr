@@ -47,7 +47,7 @@ app.prepare().then(() => {
     createShopifyAuth({
       apiKey: SHOPIFY_API_KEY,
       secret: SHOPIFY_API_SECRET_KEY,
-      scopes: ['read_orders', 'write_orders', 'read_customers'],
+      scopes: ['read_orders', 'write_orders', 'read_customers', 'read_products', 'write_products', 'read_inventory', 'write_inventory'],
       accessMode: 'offline',
       async afterAuth(ctx) {
         const { shop, accessToken } = ctx.session;
@@ -95,6 +95,13 @@ app.prepare().then(() => {
             apiVersion: ApiVersion.July20
           }),
           registerWebhook({
+            address: `${HOST}/webhook/product/update`,
+            topic: 'PRODUCTS_UPDATE',
+            accessToken,
+            shop,
+            apiVersion: ApiVersion.July20
+          }),
+          registerWebhook({
             address: `${HOST}/webhook/subscriptions/update`,
             topic: 'APP_SUBSCRIPTIONS_UPDATE',
             accessToken,
@@ -118,8 +125,9 @@ app.prepare().then(() => {
           shopModel.addShop(shop, accessToken)
         ])
         .then((result) => {
-          if (result[0].success && result[1].success && result[2].success && result[3].success &&
-            result[4].success && result[5].success && result[6].success && result[7].success) {
+          if (result[0].success && result[1].success && result[2].success &&
+            result[3].success && result[4].success && result[5].success &&
+            result[6].success && result[7].success && result[8].success) {
             console.log(`> Webhook Registered: ${shop}`);
           } else {
             console.log(`> Webhook registration failed: ${shop}`);
@@ -159,6 +167,8 @@ app.prepare().then(() => {
     console.log(`> Server started on port: ${port}`);
   });
 });
+
+global.inventory = {};
 
 const job = new CronJob('0 0 * * * *', function() {
   console.log('> Check for report');

@@ -53,10 +53,10 @@ module.exports = function(verifyRequest) {
         ctx.body = { result: CONSTANTS.STATUS.FAILED };
         return;
       } else {
-        if (!notifications[key])
-          notifications[key] = false;
+        if (!notifications[key].enabled)
+          notifications[key].enabled = false;
         else
-          notifications[key] = true;
+          notifications[key].enabled = true;
       }
     }
 
@@ -65,8 +65,10 @@ module.exports = function(verifyRequest) {
       shopModel.getShopByName(shop)
         .then(shopData => {
           if (shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM ||
-            shopData.subscription_status != CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE)
-            notifications.sales_report = false;
+            shopData.subscription_status != CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE) {
+              notifications.sales_report.enabled = false;
+              notifications.low_stock.enabled = false;
+            }
 
           shopModel.updateShop(shop, {'notifications': JSON.stringify(notifications)});
           ctx.body = { result: CONSTANTS.STATUS.SUCCESS };
@@ -313,7 +315,24 @@ module.exports = function(verifyRequest) {
             } else {
               customerUrl = null;
             }
-            sendNotification(shopData.slack_webhook_url, fields, ' ', orderUrl, customerUrl);
+
+            let actions = [];
+            if (orderUrl) {
+              actions.push({
+                type: 'button',
+                text: 'View Order',
+                url: orderUrl
+              });
+            }
+            if (customerUrl) {
+              actions.push({
+                type: 'button',
+                text: 'View Customer',
+                url: customerUrl
+              });
+            }
+
+            sendNotification(shopData.slack_webhook_url, fields, ' ', actions);
 
             ctx.body = { result: CONSTANTS.STATUS.SUCCESS };
           }
@@ -325,20 +344,23 @@ module.exports = function(verifyRequest) {
   router.get('/api/subscription', verifyRequest(), async (ctx) => {
     const shop = ctx.session.shop;
     const shopData = await shopModel.getShopByName(shop);
-    const plan = ctx.query.plan.toUpperCase();
-    if (!CONSTANTS.SUBSCRIPTION.PLAN[plan] || shopData.subscription_plan == CONSTANTS.SUBSCRIPTION.PLAN[plan]) {
+    const plan = ctx.query.plan;
+    const planUpper = plan.toUpperCase();
+    if (!CONSTANTS.SUBSCRIPTION.PLAN[planUpper] || 
+      (shopData.subscription_plan == CONSTANTS.SUBSCRIPTION.PLAN[planUpper] &&
+      shopData.subscription_status == CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE)) {
       ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
       return;
     }
-    console.log(`> Chosen a plan: ${shop} - ${plan}`);
+    console.log(`> Chosen a plan: ${shop} - ${planUpper}`);
     var fee = process.env.APP_BASIC_PLAN_FEE;
-    if (plan == CONSTANTS.SUBSCRIPTION.PLAN_NAME.PREMIUM)
+    if (planUpper == CONSTANTS.SUBSCRIPTION.PLAN_NAME.PREMIUM)
       fee = process.env.APP_PREMIUM_PLAN_FEE;
 
     const query = JSON.stringify({
       query: `mutation {
         appSubscriptionCreate(
-          name: "Slackify ${plan} plan fee"
+          name: "Bellr ${plan} plan fee"
           returnUrl: "${process.env.HOST}/subscription/callback"
           test: true
           lineItems: [
@@ -375,6 +397,7 @@ module.exports = function(verifyRequest) {
         })
         .then(response => response.json())
         .then(responseJson => {
+          ctx.session['plan'] = CONSTANTS.SUBSCRIPTION.PLAN[planUpper];
           const confirmationUrl = responseJson.data.appSubscriptionCreate.confirmationUrl;
           ctx.redirect(confirmationUrl);
           resolve();
@@ -387,6 +410,7 @@ module.exports = function(verifyRequest) {
     const subscriptionId = ctx.query.charge_id;
     const shopData = {
       subscription_id: subscriptionId,
+      subscription_plan: ctx.session.plan,
       subscription_status: CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE,
       subscription_activated_time: basefunc.getCurrentTimestamp()
     };
@@ -415,14 +439,14 @@ module.exports = function(verifyRequest) {
           if (error) {
             console.log(`> Slack authentication error: ${error}`);
             ctx.response.status = 500;
-            ctx.response.body = 'Failed to add Slackify to a Slack channel.';
+            ctx.response.body = 'Failed to add Bellr to a Slack channel.';
             resolve();
           } else {
             const body = JSON.parse(bodyJSON);
             if (!body.ok) {
               console.log(`> Slack authentication failed: ${body.error}`);
               ctx.response.status = 500;
-              ctx.response.body = 'Failed to add Slackify to the Slack channel.';
+              ctx.response.body = 'Failed to add Bellr to the Slack channel.';
             } else {
               shopModel.updateShop(shop, {
                 slack_access: bodyJSON,

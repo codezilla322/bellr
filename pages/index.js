@@ -1,4 +1,4 @@
-import { Frame, Page, Layout, Card, DataTable, TextContainer, Heading, Link, Toast, Icon } from '@shopify/polaris';
+import { Frame, Page, Layout, Card, DataTable, TextContainer, Heading, Link, TextField, Toast, Icon } from '@shopify/polaris';
 import createApp from '@shopify/app-bridge';
 import { Redirect } from '@shopify/app-bridge/actions';
 import Cookies from 'js-cookie';
@@ -40,7 +40,17 @@ class Index extends React.Component {
 
   handleChange = (key, checked) => {
     var settings = this.state.settings;
-    settings[key] = checked;
+    settings[key].enabled = checked;
+    this.setState({ settings: settings });
+  }
+
+  handleStockLimitChange = (limit) => {
+    limit = parseInt(limit);
+    if (!limit)
+      limit = 0;
+
+    var settings = this.state.settings;
+    settings.low_stock.limit = '' + limit;
     this.setState({ settings: settings });
   }
 
@@ -110,20 +120,36 @@ class Index extends React.Component {
       var notifications = [];
       for (var key in this.state.settings) {
         var notification = [];
-        if (key == 'sales_report' && (!this.state.paid || this.state.plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM)) {
+        if ((key == 'sales_report' || key == 'low_stock') &&
+          (!this.state.paid || this.state.plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM)) {
           notification.push(<Icon source={LockMajorMonotone} />);
         } else {
           notification.push(
             <Switch
               handleChange={this.handleChange}
               stateKey={key}
-              isEnabled={this.state.settings[key]}
+              isEnabled={this.state.settings[key].enabled}
             />
           );
         }
         const keyUppercase = key.toUpperCase();
         notification.push(CONSTANTS.NOTIFICATION[keyUppercase].TITLE);
-        notification.push(<div className="description-container">{CONSTANTS.NOTIFICATION[keyUppercase].DESCRIPTION}</div>);
+        if (key == 'low_stock' && this.state.paid && this.state.plan == CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM) {
+          notification.push(
+            <div className="settings-container">
+              <div className="description-container">{CONSTANTS.NOTIFICATION[keyUppercase].DESCRIPTION}</div>
+              <TextField
+                type="number"
+                label="Stock limit:"
+                value={this.state.settings.low_stock.limit}
+                onChange={this.handleStockLimitChange}
+                min="0"
+              />
+            </div>
+          );
+        } else {
+          notification.push(<div className="description-container">{CONSTANTS.NOTIFICATION[keyUppercase].DESCRIPTION}</div>);
+        }
         notifications.push(notification);
       }
       var toastMarkup = '';
@@ -163,11 +189,11 @@ class Index extends React.Component {
       );
     } else {
       return (
-        <Page title="Welcome to Slackify!">
+        <Page title="Welcome to Bellr!">
           <Layout sectioned>
             <TextContainer>
               <Heading>
-                With Slackify, you can receive important order notifications and sales report sent straight to Slack.
+                With Bellr, you can receive important order notifications, sales report and low stock notification sent straight to Slack.
                 To get started, click the "Add to Slack" button below.
               </Heading>
               <p>

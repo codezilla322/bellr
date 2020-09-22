@@ -319,7 +319,7 @@ function getReportOfDay(shopify, date, timezone) {
       totalOrders += totalPrice;
 
       // Customer count
-      if(order.customer) {
+      if (order.customer) {
         customerId = order.customer.id;
         if (!customers.includes(customerId))
           customers.push(customerId);

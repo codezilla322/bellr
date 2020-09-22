@@ -22,6 +22,12 @@ button .Polaris-Icon {
 .description-container {
   white-space: normal;
 }
+.settings-container .description-container {
+  margin-bottom: 10px;
+}
+.settings-container .Polaris-TextField {
+  width: 150px;
+}
 .subscription-plan {
   min-height: 276px;
   padding: 2rem;

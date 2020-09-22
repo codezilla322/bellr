@@ -92,6 +92,10 @@ class Subscription extends React.Component {
                         <Icon source={TickMinor} />
                         <p>{CONSTANTS.NOTIFICATION.SALES_REPORT.TITLE}</p>
                       </List.Item>
+                      <List.Item>
+                        <Icon source={TickMinor} />
+                        <p>{CONSTANTS.NOTIFICATION.LOW_STOCK.TITLE}</p>
+                      </List.Item>
                     </List>
                     {buttonPremium}
                   </div>

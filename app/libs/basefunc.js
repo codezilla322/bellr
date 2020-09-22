@@ -17,7 +17,7 @@ module.exports = {
       return true;
     return false;
   },
-  isSendable: function(shopData, orderType) {
+  isSendable: function(shopData, orderType, checkPlan = false) {
     if (shopData.subscription_plan == CONSTANTS.SUBSCRIPTION.PLAN.TRIAL) {
       if (this.isExpired(shopData.trial_expiration_time)) {
         return false;
@@ -27,9 +27,17 @@ module.exports = {
         return false;
       }
     }
-    shopData.notifications = JSON.parse(shopData.notifications);
-    if (!shopData.notifications[orderType])
+
+    if (shopData.slack_connected != CONSTANTS.SLACK.CONNECTED)
       return false;
+
+    if (checkPlan && shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM)
+      return false;
+
+    shopData.notifications = JSON.parse(shopData.notifications);
+    if (!shopData.notifications[orderType].enabled)
+      return false;
+
     return true;
   }
 };

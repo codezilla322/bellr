@@ -1,6 +1,6 @@
 const moment = require('moment');
 const { getShopsByTimezone } = require('@models/shops');
-const CONSTANTS = require('@libs/constants');
+const { isSendable } = require('@libs/basefunc');
 const { createReport } = require('@libs/order');
 const { sendNotification } = require('@libs/slack');
 
@@ -37,12 +37,9 @@ module.exports = {
 
     const shops = await getShopsByTimezone(tzOffsetPlus, tzOffsetMinus);
     shops.forEach(shopData => {
-      if (shopData.subscription_plan != CONSTANTS.SUBSCRIPTION.PLAN.PREMIUM ||
-        shopData.subscription_status != CONSTANTS.SUBSCRIPTION.STATUS.ACTIVE)
+      if (!isSendable(shopData, 'sales_report', true))
         return;
-      notifications = JSON.parse(shopData.notifications);
-      if (!notifications.sales_report)
-        return;
+
       createReport(shopData)
         .then(report => {
           sendNotification(shopData.slack_webhook_url, report.fields, report.title);
