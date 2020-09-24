@@ -2,7 +2,7 @@ const moment = require('moment');
 const { getShopsByTimezone } = require('@models/shops');
 const { isSendable } = require('@libs/basefunc');
 const { createReport } = require('@libs/order');
-const { sendNotification } = require('@libs/slack');
+const { sendReportNotification } = require('@libs/slack');
 
 module.exports = {
   checkStores: async function() {
@@ -42,7 +42,7 @@ module.exports = {
 
       createReport(shopData)
         .then(report => {
-          sendNotification(shopData.slack_webhook_url, report.fields, report.title);
+          sendReportNotification(shopData.slack_webhook_url, report.title, report.blocks);
         });
     });
   }

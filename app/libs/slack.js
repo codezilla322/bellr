@@ -41,7 +41,14 @@ module.exports = {
       });
     }
 
-    $fields = createNotification(order, orderType, shop, shopData.money_format);
+    const fields = createNotification(order, orderType, shop, shopData.money_format);
     this.sendNotification(shopData.slack_webhook_url, fields, ' ', actions);
-  }
+  },
+  sendReportNotification: function(webhook_url, title = ' ', blocks = []) {
+    const webhook = new IncomingWebhook(webhook_url);
+    webhook.send({
+      text: title,
+      blocks: blocks
+    });
+  },
 }

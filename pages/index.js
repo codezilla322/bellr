@@ -1,4 +1,4 @@
-import { Frame, Page, Layout, Card, DataTable, TextContainer, Heading, Link, TextField, Toast, Icon } from '@shopify/polaris';
+import { Frame, Page, Layout, Card, DataTable, TextContainer, Heading, Link, TextField, Toast, Icon, FooterHelp } from '@shopify/polaris';
 import createApp from '@shopify/app-bridge';
 import { Redirect } from '@shopify/app-bridge/actions';
 import Cookies from 'js-cookie';
@@ -156,6 +156,14 @@ class Index extends React.Component {
       if (this.state.toast == CONSTANTS.TOAST.SHOW) {
         toastMarkup = (<Toast content={this.state.toastMsg} onDismiss={this.hideToast} />);
       }
+      var footerHelpMarkup = (
+        <FooterHelp>
+          For any suggestions, questions, comments or problems just email us at{' '}
+          <Link url="mailto:support@bellr.co" external>
+            support@bellr.co
+          </Link>
+        </FooterHelp>
+      );
       return (
         <Frame>
           <Page title="Settings">
@@ -184,6 +192,7 @@ class Index extends React.Component {
               </Layout.Section>
             </Layout>
             {toastMarkup}
+            {footerHelpMarkup}
           </Page>
         </Frame>
       );
@@ -205,6 +214,7 @@ class Index extends React.Component {
               </p>
             </TextContainer>
           </Layout>
+          {footerHelpMarkup}
         </Page>
       );
     }

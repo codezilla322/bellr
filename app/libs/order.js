@@ -126,7 +126,7 @@ function createNotification(order, orderType, shop, moneyFormat) {
     field = new Object();
   }
 
-  return $fields;
+  return fields;
 }
 
 function createReport(shopData) {
@@ -172,104 +172,214 @@ function createReport(shopData) {
       getReportOfDay(shopify, dayOfLastweek, shopData.timezone)
     ])
     .then((result) => {
-      let fields = [];
-      let field = {};
       let reportToday = result[0];
       let reportYesterday = result[1];
       let reportLastweek = result[2];
 
-      // Sales
+      let blocks = [];
+      let block = {};
+      let element = {};
+
+      // Report title
+      const reportTitle = `:chart_with_upwards_trend: Report (${today.format('YYYY-MM-DD')})`;
+
+      // Divider      
+      block['type'] = `divider`;
+      blocks.push(block);
+      block = new Object();
+      
+      // Sales title
       let formattedPercent = '';
-      let formattedSales = shopData.money_format.replace('{{amount}}', reportToday.sales.toFixed(2));
-      field['title'] = `:moneybag: Total Sales \`${formattedSales}\``;
-      field['value'] = '';
+      let formattedSales = getFormattedAmount(shopData.money_format, reportToday.sales);
+      block['type'] = `section`;
+      block['text'] = {};
+      block.text['type'] = `mrkdwn`;
+      block.text['text'] = `:moneybag: *Total Sales:* \`${formattedSales}\``;
+      blocks.push(block);
+      block = new Object();
+      
+      // Sales content
+      block['type'] = `context`;
+      block['elements'] = [];
+      element['type'] = `mrkdwn`;
       formattedPercent = getFormattedPercent(reportToday.sales, reportYesterday.sales);
-      formattedSales = shopData.money_format.replace('{{amount}}', reportYesterday.sales.toFixed(2));
-      field.value = field.value + `${formattedPercent}Prev.Day: \`${formattedSales}\`\n`;
+      formattedSales = getFormattedAmount(shopData.money_format, reportYesterday.sales);
+      element['text'] = `${formattedPercent} vs *Prev. Day:* \`${formattedSales}\`\n`;
       formattedPercent = getFormattedPercent(reportToday.sales, reportLastweek.sales);
-      formattedSales = shopData.money_format.replace('{{amount}}', reportLastweek.sales);
-      field.value = field.value + `${formattedPercent}Last ${dayOfLastweek.format('dddd')}: \`${formattedSales}\``;
-      fields.push(field);
-      field = new Object();
+      formattedSales = getFormattedAmount(shopData.money_format, reportLastweek.sales);
+      element.text = element.text + `${formattedPercent} vs *Last ${dayOfLastweek.format('dddd')}:* \`${formattedSales}\``;
+      block.elements.push(element);
+      blocks.push(block);
+      element = new Object();
+      block = new Object();
 
-      // orders
-      field['title'] = `:handshake: Orders \`${reportToday.orders}\``;
-      field['value'] = '';
+      // Orders title
+      block['type'] = `section`;
+      block['text'] = {};
+      block.text['type'] = `mrkdwn`;
+      block.text['text'] = `:handshake: *Orders:* \`${reportToday.orders}\``;
+      blocks.push(block);
+      block = new Object();
+
+      // Orders content
+      block['type'] = `context`;
+      block['elements'] = [];
+      element['type'] = `mrkdwn`;
       formattedPercent = getFormattedPercent(reportToday.orders, reportYesterday.orders);
-      field.value = field.value + `${formattedPercent}Prev.Day: \`${reportYesterday.orders}\`\n`;
+      element['text'] = `${formattedPercent} vs *Prev. Day:* \`${reportYesterday.orders}\`\n`;
       formattedPercent = getFormattedPercent(reportToday.orders, reportLastweek.orders);
-      field.value = field.value + `${formattedPercent}Last ${dayOfLastweek.format('dddd')}: \`${reportLastweek.orders}\``;
-      fields.push(field);
-      field = new Object();
+      element.text = element.text + `${formattedPercent} vs *Last ${dayOfLastweek.format('dddd')}:* \`${reportLastweek.orders}\``;
+      block.elements.push(element);
+      blocks.push(block);
+      element = new Object();
+      block = new Object();
 
-      // customers
-      field['title'] = `:male-office-worker: Customers \`${reportToday.customers}\``;
-      field['value'] = '';
+      // Customers title
+      block['type'] = `section`;
+      block['text'] = {};
+      block.text['type'] = `mrkdwn`;
+      block.text['text'] = `:male-office-worker: *Customers:* \`${reportToday.customers}\``;
+      blocks.push(block);
+      block = new Object();
+
+      // Customers content
+      block['type'] = `context`;
+      block['elements'] = [];
+      element['type'] = `mrkdwn`;
       formattedPercent = getFormattedPercent(reportToday.customers, reportYesterday.customers);
-      field.value = field.value + `${formattedPercent}Prev.Day: \`${reportYesterday.customers}\`\n`;
+      element['text'] = `${formattedPercent} vs *Prev. Day:* \`${reportYesterday.customers}\`\n`;
       formattedPercent = getFormattedPercent(reportToday.customers, reportLastweek.customers);
-      field.value = field.value + `${formattedPercent}Last ${dayOfLastweek.format('dddd')}: \`${reportLastweek.customers}\``;
-      fields.push(field);
-      field = new Object();
+      element.text = element.text + `${formattedPercent} vs *Last ${dayOfLastweek.format('dddd')}:* \`${reportLastweek.customers}\``;
+      block.elements.push(element);
+      blocks.push(block);
+      element = new Object();
+      block = new Object();
 
-      // aov
-      let formattedAov = shopData.money_format.replace('{{amount}}', reportToday.aov);
-      field['title'] = `:shopping_bags: Average Order Value \`${formattedAov}\``;
-      field['value'] = '';
+      // Aov title
+      let formattedAov = getFormattedAmount(shopData.money_format, reportToday.aov);
+      block['type'] = `section`;
+      block['text'] = {};
+      block.text['type'] = `mrkdwn`;
+      block.text['text'] = `:shopping_bags: *Avg. Order Value:* \`${formattedAov}\``;
+      blocks.push(block);
+      block = new Object();
+
+      // Aov content
+      block['type'] = `context`;
+      block['elements'] = [];
+      element['type'] = `mrkdwn`;
       formattedPercent = getFormattedPercent(reportToday.aov, reportYesterday.aov);
-      formattedAov = shopData.money_format.replace('{{amount}}', reportYesterday.aov);
-      field.value = field.value + `${formattedPercent}Prev.Day: \`${formattedAov}\`\n`;
+      formattedAov = getFormattedAmount(shopData.money_format, reportYesterday.aov);
+      element['text'] = `${formattedPercent} vs *Prev. Day:* \`${formattedAov}\`\n`;
       formattedPercent = getFormattedPercent(reportToday.aov, reportLastweek.aov);
-      formattedAov = shopData.money_format.replace('{{amount}}', reportLastweek.aov);
-      field.value = field.value + `${formattedPercent}Last ${dayOfLastweek.format('dddd')}: \`${formattedAov}\``;
-      fields.push(field);
-      field = new Object();
+      formattedAov = getFormattedAmount(shopData.money_format, reportLastweek.aov);
+      element.text = element.text + `${formattedPercent} vs *Last ${dayOfLastweek.format('dddd')}:* \`${formattedAov}\``;
+      block.elements.push(element);
+      blocks.push(block);
+      element = new Object();
+      block = new Object();
 
-      // Source
-      field['title'] = ':spider_web: Source (Top 3)';
-      field['value'] = '';
-      reportToday.referrings.forEach((referring, idx) => {
-        if (idx > 2)
-          return;
-        const sale = shopData.money_format.replace('{{amount}}', referring.value.toFixed(2));
-        field.value = field.value + `• ${referring.key}: \`${sale}\` (${referring.percent}%)\n`;
-      });
-      if (!field.value)
-        field.value = 'No order source found';
-      fields.push(field);
-      field = new Object();
+      if (reportToday.referrings.length == 0 &&
+        reportToday.landings.length == 0 &&
+        reportToday.gateways.length == 0) {
+        resolve({
+          title: reportTitle,
+          blocks: blocks
+        });
+        return;
+      }
 
-      // Landing page
-      field['title'] = ':bookmark_tabs: Landing Pages (Top 3)';
-      field['value'] = '';
-      reportToday.landings.forEach((landing, idx) => {
-        if (idx > 2)
-          return;
-        const sale = shopData.money_format.replace('{{amount}}', landing.value.toFixed(2));
-        field.value = field.value + `• ${landing.key}: \`${sale}\` (${landing.percent}%)\n`;
-      });
-      if (!field.value)
-        field.value = 'No landing pages found';
-      fields.push(field);
-      field = new Object();
+      // Divider      
+      block['type'] = `divider`;
+      blocks.push(block);
+      block = new Object();
 
-      // Payment gateway
-      field['title'] = ':bank: Payment Gateways (Top 3)';
-      field['value'] = '';
-      reportToday.gateways.forEach((gateway, idx) => {
-        if (idx > 2)
-          return;
-        const sale = shopData.money_format.replace('{{amount}}', gateway.value.toFixed(2));
-        field.value = field.value + `• ${gateway.key}: \`${sale}\` (${gateway.percent}%)\n`;
-      });
-      if (!field.value)
-        field.value = 'No payment gateways found';
-      fields.push(field);
-      field = new Object();
+      // Breakdown
+      block['type'] = `section`;
+      block['text'] = {};
+      block.text['type'] = `mrkdwn`;
+      block.text['text'] = `*Sales Breakdown (Top 3 by Revenue)*`;
+      blocks.push(block);
+      block = new Object();
+
+      // Source title
+      block['type'] = `section`;
+      block['text'] = {};
+      block.text['type'] = `mrkdwn`;
+      block.text['text'] = `:spider_web: Source`;
+      blocks.push(block);
+      block = new Object();
+
+      // Source content
+      if (reportToday.referrings.length > 0) {
+        block['type'] = `context`;
+        block['elements'] = [];
+        element['type'] = `mrkdwn`;
+        reportToday.referrings.forEach((referring, idx) => {
+          if (idx > 2)
+            return;
+          const amount = getFormattedAmount(shopData.money_format, referring.value);
+          element['text'] = element['text'] + `• ${referring.key}: \`${amount}\` (${referring.percent}%)\n`;
+        });
+        block.elements.push(element);
+        blocks.push(block);
+        element = new Object();
+        block = new Object();
+      }
+
+      // Landing page title
+      block['type'] = `section`;
+      block['text'] = {};
+      block.text['type'] = `mrkdwn`;
+      block.text['text'] = `:bookmark_tabs: Landing Pages`;
+      blocks.push(block);
+      block = new Object();
+
+      // Landing page content
+      if (reportToday.landings.length > 0) {
+        block['type'] = `context`;
+        block['elements'] = [];
+        element['type'] = `mrkdwn`;
+        reportToday.landings.forEach((landing, idx) => {
+          if (idx > 2)
+            return;
+          const amount = getFormattedAmount(shopData.money_format, landing.value);
+          element['text'] = element['text'] + `• ${landing.key}: \`${amount}\` (${landing.percent}%)\n`;
+        });
+        block.elements.push(element);
+        blocks.push(block);
+        element = new Object();
+        block = new Object();
+      }
+
+      // Payment gateway title
+      block['type'] = `section`;
+      block['text'] = {};
+      block.text['type'] = `mrkdwn`;
+      block.text['text'] = `:bank: Payment Gateways`;
+      blocks.push(block);
+      block = new Object();
+
+      // Payment gateway content
+      if (reportToday.gateways.length > 0) {
+        block['type'] = `context`;
+        block['elements'] = [];
+        element['type'] = `mrkdwn`;
+        reportToday.gateways.forEach((gateway, idx) => {
+          if (idx > 2)
+            return;
+          const amount = getFormattedAmount(shopData.money_format, gateway.value);
+          element['text'] = element['text'] + `• ${gateway.key}: \`${amount}\` (${gateway.percent}%)\n`;
+        });
+        block.elements.push(element);
+        blocks.push(block);
+        element = new Object();
+        block = new Object();
+      }
 
       resolve({
-        fields: fields,
-        title: `:chart_with_upwards_trend: Report (${today.format('YYYY-MM-DD')})`
+        title: reportTitle,
+        blocks: blocks
       });
     });
   });
@@ -396,24 +506,63 @@ function getReportOfDay(shopify, date, timezone) {
   });
 }
 
+function getFormattedAmount(moneyFormat, amount) {
+  return moneyFormat.replace('{{amount}}', amount.toFixed(2));
+}
+
 function getFormattedPercent(num1, num2) {
-  num1 = parseFloat(num1);
-  num2 = parseFloat(num2);
-  let formattedPercent = '';
-  if (num1 > 0 && num2 > 0) {
-    let percent = 0;
-    percent = parseFloat((num1 - num2) / num2 * 100).toFixed(2);
-    formattedPercent = `${Math.abs(percent)}%\` vs `;
+  num1 = Math.max(0, parseFloat(num1));
+  num2 = Math.max(0, parseFloat(num2));
+  let symbol = '';
+  let sign = '';
+  let percent = 0;
+
+  if (num1 == num2) {
+    symbol = `:heavy_check_mark:`;
+    if (num1 == 0)
+      symbol = `:white_check_mark:`;
+    percent = 0;
+  } else if (num1 == 0) {
+    symbol = `:small_red_triangle_down:`;
+    sign = `-`;
+    percent = 100;
+  } else if (num2 == 0) {
+    symbol = `:small_red_triangle:`;
+    sign = `+`;
+    percent = 100;
+  } else {
+    percent = (num1 - num2) / num2 * 100;
     if (percent > 0) {
-      formattedPercent = `\`▲ ` + formattedPercent;
-    } else if (percent < 0) {
-      formattedPercent = `\`▼ ` + formattedPercent;
+      sign = `+`;
+      symbol = `:small_red_triangle:`;
     } else {
-      formattedPercent = `\`` + formattedPercent;
+      sign = `-`;
+      symbol = `:small_red_triangle_down:`;
     }
   }
-  return formattedPercent;
+
+  percent = Math.abs(percent).toFixed(2);
+  return `${symbol}\`${sign}${percent}%\``;
 }
+
+// function getFormattedPercent(num1, num2) {
+//   num1 = parseFloat(num1);
+//   num2 = parseFloat(num2);
+//   let formattedPercent = '';
+//   if (num1 > 0 && num2 > 0) {
+//     let percent = 0;
+//     percent = parseFloat((num1 - num2) / num2 * 100).toFixed(2);
+//     formattedPercent = `${Math.abs(percent)}%\` vs `;
+//     if (percent > 0) {
+//       formattedPercent = `\`▲ ` + formattedPercent;
+//     } else if (percent < 0) {
+//       formattedPercent = `\`▼ ` + formattedPercent;
+//     } else {
+//       formattedPercent = `\`` + formattedPercent;
+//     }
+//   }
+//   return formattedPercent;
+// }
 
 function sortByValue(obj, sum) {
   let arr = [];
