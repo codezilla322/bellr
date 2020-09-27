@@ -7,7 +7,7 @@ module.exports = {
   externals: nodeExternals(),
   mode: 'production',
   output: {
-    filename: 'server.bundle.js',
+    filename: 'bellr.js',
     path: __dirname,
   },
   resolve: {

@@ -419,7 +419,7 @@ module.exports = function(verifyRequest) {
     ctx.redirect(`https://${shop}/admin/apps/${process.env.APP_NAME}`);
   });
 
-  router.get('/slack/oauth', verifyRequest(), (ctx) => {
+  router.get('/oauth', verifyRequest(), (ctx) => {
     const shop = ctx.session.shop;
     if (!ctx.query.code) {
       console.log(`> Invalid slack authentication code: ${shop}`);
