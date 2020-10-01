@@ -362,7 +362,6 @@ module.exports = function(verifyRequest) {
         appSubscriptionCreate(
           name: "Bellr ${plan} plan fee"
           returnUrl: "${process.env.HOST}/subscription/callback"
-          test: true
           lineItems: [
             {
               plan: {

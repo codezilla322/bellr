@@ -2,8 +2,8 @@ const Router = require('koa-router');
 const router = new Router({ prefix: '/webhook' });
 const shopModel = require('@models/shops');
 const CONSTANTS = require('@libs/constants');
-const { isSendable } = require('@libs/basefunc');
-const { sendNotification, sendNotificationFromOrder } = require('@libs/slack');
+const basefunc = require('@libs/basefunc');
+const slack = require('@libs/slack');
 
 module.exports = function(webhook) {
 
@@ -13,8 +13,8 @@ module.exports = function(webhook) {
     console.log(`> New order created: ${shop} - ${order.id}`);
     const shopData = await shopModel.getShopByName(shop);
 
-    if (isSendable(shopData, 'new_order'))
-      sendNotificationFromOrder(order, 'NEW_ORDER', shop, shopData);
+    if (basefunc.isSendable(shopData, 'new_order'))
+      slack.sendNotificationFromOrder(order, 'NEW_ORDER', shop, shopData);
   });
 
   router.post('/orders/cancelled', webhook, async (ctx) => {
@@ -23,8 +23,8 @@ module.exports = function(webhook) {
     console.log(`> Order cancelled: ${shop} - ${order.id}`);
     const shopData = await shopModel.getShopByName(shop);
     
-    if (isSendable(shopData, 'cancelled_order'))
-      sendNotificationFromOrder(order, 'CANCELLED_ORDER', shop, shopData);
+    if (basefunc.isSendable(shopData, 'cancelled_order'))
+      slack.sendNotificationFromOrder(order, 'CANCELLED_ORDER', shop, shopData);
   });
 
   router.post('/orders/paid', webhook, async (ctx) => {
@@ -33,8 +33,8 @@ module.exports = function(webhook) {
     console.log(`> Order paid: ${shop} - ${order.id}`);
     const shopData = await shopModel.getShopByName(shop);
 
-    if (isSendable(shopData, 'paid_order'))
-      sendNotificationFromOrder(order, 'PAID_ORDER', shop, shopData);
+    if (basefunc.isSendable(shopData, 'paid_order'))
+      slack.sendNotificationFromOrder(order, 'PAID_ORDER', shop, shopData);
   });
 
   router.post('/orders/fulfilled', webhook, async (ctx) => {
@@ -43,8 +43,8 @@ module.exports = function(webhook) {
     console.log(`> Order fulfilled: ${shop} - ${order.id}`);
     const shopData = await shopModel.getShopByName(shop);
 
-    if (isSendable(shopData, 'fulfilled_order'))
-      sendNotificationFromOrder(order, 'FULFILLED_ORDER', shop, shopData);
+    if (basefunc.isSendable(shopData, 'fulfilled_order'))
+      slack.sendNotificationFromOrder(order, 'FULFILLED_ORDER', shop, shopData);
   });
 
   router.post('/orders/partially_fulfilled', webhook, async (ctx) => {
@@ -53,8 +53,8 @@ module.exports = function(webhook) {
     console.log(`> Order partially fulfilled: ${shop} - ${order.id}`);
     const shopData = await shopModel.getShopByName(shop);
 
-    if (isSendable(shopData, 'partially_fulfilled_order'))
-      sendNotificationFromOrder(order, 'PARTIALLY_FULFILLED_ORDER', shop, shopData);
+    if (basefunc.isSendable(shopData, 'partially_fulfilled_order'))
+      slack.sendNotificationFromOrder(order, 'PARTIALLY_FULFILLED_ORDER', shop, shopData);
   });
 
   router.post('/product/update', webhook, async (ctx) => {
@@ -63,7 +63,7 @@ module.exports = function(webhook) {
     console.log(`> Product updated: ${shop} - ${product.id}`);
     const shopData = await shopModel.getShopByName(shop);
 
-    if (!isSendable(shopData, 'low_stock', true))
+    if (!basefunc.isSendable(shopData, 'low_stock', true))
       return;
 
     const productUrl = `https://${shop}/admin/products/${product.id}`;
@@ -136,7 +136,7 @@ module.exports = function(webhook) {
         });
       }
 
-      sendNotification(shopData.slack_webhook_url, fields, 'Low Stock Alert', actions);
+      slack.sendNotification(shopData.slack_webhook_url, fields, 'Low Stock Alert', actions);
     });
   });
 

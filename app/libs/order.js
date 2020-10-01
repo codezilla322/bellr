@@ -131,10 +131,7 @@ function createNotification(order, orderType, shop, moneyFormat) {
 
 function createReport(shopData) {
   const targetHour = parseInt(process.env.REPORT_TIME);
-  /***********************************/
   const curHour = moment.utc().hour();
-  // const curHour = moment.utc().second();
-  /***********************************/
   const sign = shopData.timezone.slice(0, 1);
   let today = moment.utc();
 
@@ -149,10 +146,6 @@ function createReport(shopData) {
       today = today.subtract(1, 'days');
     }
   }
-
-  /********************************/
-  // today = today.subtract(4, 'days');
-  /********************************/
 
   let yesterday = today.clone();
   yesterday = yesterday.subtract(1, 'days');
@@ -315,11 +308,12 @@ function createReport(shopData) {
         block['type'] = `context`;
         block['elements'] = [];
         element['type'] = `mrkdwn`;
+        element['text'] = '';
         reportToday.referrings.forEach((referring, idx) => {
           if (idx > 2)
             return;
           const amount = getFormattedAmount(shopData.money_format, referring.value);
-          element['text'] = element['text'] + `• ${referring.key}: \`${amount}\` (${referring.percent}%)\n`;
+          element.text = element.text + `• ${referring.key}: \`${amount}\` (${referring.percent}%)\n`;
         });
         block.elements.push(element);
         blocks.push(block);
@@ -340,11 +334,12 @@ function createReport(shopData) {
         block['type'] = `context`;
         block['elements'] = [];
         element['type'] = `mrkdwn`;
+        element['text'] = '';
         reportToday.landings.forEach((landing, idx) => {
           if (idx > 2)
             return;
           const amount = getFormattedAmount(shopData.money_format, landing.value);
-          element['text'] = element['text'] + `• ${landing.key}: \`${amount}\` (${landing.percent}%)\n`;
+          element.text = element.text + `• ${landing.key}: \`${amount}\` (${landing.percent}%)\n`;
         });
         block.elements.push(element);
         blocks.push(block);
@@ -365,11 +360,12 @@ function createReport(shopData) {
         block['type'] = `context`;
         block['elements'] = [];
         element['type'] = `mrkdwn`;
+        element['text'] = '';
         reportToday.gateways.forEach((gateway, idx) => {
           if (idx > 2)
             return;
           const amount = getFormattedAmount(shopData.money_format, gateway.value);
-          element['text'] = element['text'] + `• ${gateway.key}: \`${amount}\` (${gateway.percent}%)\n`;
+          element.text = element.text + `• ${gateway.key}: \`${amount}\` (${gateway.percent}%)\n`;
         });
         block.elements.push(element);
         blocks.push(block);
@@ -487,7 +483,7 @@ function getReportOfDay(shopify, date, timezone) {
 
     let aov = 0;
     if (orderCount > 0)
-      aov = parseFloat(totalOrders / orderCount).toFixed(2);
+      aov = parseFloat(totalOrders / orderCount);
 
     referrings = sortByValue(referrings, totalOrders);
     landings = sortByValue(landings, totalOrders);
@@ -507,6 +503,7 @@ function getReportOfDay(shopify, date, timezone) {
 }
 
 function getFormattedAmount(moneyFormat, amount) {
+  console.log(amount);
   return moneyFormat.replace('{{amount}}', amount.toFixed(2));
 }
 
@@ -544,25 +541,6 @@ function getFormattedPercent(num1, num2) {
   percent = Math.abs(percent).toFixed(2);
   return `${symbol}\`${sign}${percent}%\``;
 }
-
-// function getFormattedPercent(num1, num2) {
-//   num1 = parseFloat(num1);
-//   num2 = parseFloat(num2);
-//   let formattedPercent = '';
-//   if (num1 > 0 && num2 > 0) {
-//     let percent = 0;
-//     percent = parseFloat((num1 - num2) / num2 * 100).toFixed(2);
-//     formattedPercent = `${Math.abs(percent)}%\` vs `;
-//     if (percent > 0) {
-//       formattedPercent = `\`▲ ` + formattedPercent;
-//     } else if (percent < 0) {
-//       formattedPercent = `\`▼ ` + formattedPercent;
-//     } else {
-//       formattedPercent = `\`` + formattedPercent;
-//     }
-//   }
-//   return formattedPercent;
-// }
 
 function sortByValue(obj, sum) {
   let arr = [];

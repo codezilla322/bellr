@@ -48,6 +48,8 @@ module.exports = {
         shop_origin: shop,
         access_token: accessToken,
         notifications: '{"new_order":{"enabled":true},"cancelled_order":{"enabled":true},"paid_order":{"enabled":true},"fulfilled_order":{"enabled":true},"partially_fulfilled_order":{"enabled":true},"sales_report":{"enabled":false},"low_stock":{"enabled":false,"limit":"10"}}',
+        slack_access: '',
+        slack_webhook_url: '',
         first_installed_time: getCurrentTimestamp(),
         trial_expiration_time: Math.floor(new Date().getTime() / 1000) + free_trial_period * 24 * 60 * 60,
         timezone: settings.timezone,
