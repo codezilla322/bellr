@@ -176,5 +176,16 @@ module.exports = function(webhook) {
     console.log(`> Shop plan cancelled: ${shop}`);
   });
 
+  router.post('/shop/redact', webhook, (ctx) => {
+    ctx.response.status = 200;
+  });
+
+  router.post('/customers/redact', webhook, (ctx) => {
+    ctx.response.status = 200;
+  });
+
+  router.post('/customers/data_request', webhook, (ctx) => {
+    ctx.response.status = 200;
+  });
   return router;
 }
