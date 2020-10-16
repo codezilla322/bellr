@@ -1,6 +1,6 @@
 const moment = require('moment');
 const { getShopsByTimezone } = require('@models/shops');
-const { isSendable } = require('@libs/basefunc');
+const basefunc = require('@libs/basefunc');
 const { createReport } = require('@libs/order');
 const { sendReportNotification } = require('@libs/slack');
 
@@ -8,7 +8,6 @@ module.exports = {
   checkStores: async function() {
     const targetHour = parseInt(process.env.REPORT_TIME);
     const curHour = moment.utc().hour();
-
     let tzOffsetPlus = 0;
     let tzOffsetMinus = 0;
     if (targetHour > curHour) {
@@ -32,7 +31,7 @@ module.exports = {
 
     const shops = await getShopsByTimezone(tzOffsetPlus, tzOffsetMinus);
     shops.forEach(shopData => {
-      if (!isSendable(shopData, 'sales_report', true))
+      if (!basefunc.isSendable(shopData, 'sales_report', true))
         return;
 
       createReport(shopData)

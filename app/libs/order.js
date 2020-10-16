@@ -503,7 +503,6 @@ function getReportOfDay(shopify, date, timezone) {
 }
 
 function getFormattedAmount(moneyFormat, amount) {
-  console.log(amount);
   return moneyFormat.replace('{{amount}}', amount.toFixed(2));
 }
 
